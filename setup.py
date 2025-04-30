@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name='gridmaster',
-    version='0.1.0',
-    description='A lightweight multi-stage grid search AutoML framework for classifiers',
+    version='0.2.0',
+    description='A lightweight multi-stage grid search AutoML framework for classifiers. GridMaster v0.2.0: Log-scale search + plot customization features',
     author='Winston Wang',
     author_email='74311922+wins-wang@users.noreply.github.com',
     url='https://github.com/wins-wang/GridMaster.git',

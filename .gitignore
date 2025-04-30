@@ -1,23 +1,24 @@
-# Python cache and compiled files
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
+*.pyo
 
-# Jupyter notebooks checkpoints
+# Environments
+.venv*/
+.env*/
+
+# Jupyter
 .ipynb_checkpoints/
 
-# Virtual environments
-venv/
-env/
-
-# Model artifacts and outputs
-model_exports/
-*.joblib
-*.pkl
+# Mac
+.DS_Store
 
 # Build artifacts
-dist/
 build/
+dist/
+docs/build/
 
-# System files
-.DS_Store
+# VSCode or PyCharm
+.vscode/
+.idea/
