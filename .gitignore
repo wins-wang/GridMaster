@@ -1,0 +1,23 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Virtual environments
+venv/
+env/
+
+# Model artifacts and outputs
+model_exports/
+*.joblib
+*.pkl
+
+# Build artifacts
+dist/
+build/
+
+# System files
+.DS_Store
