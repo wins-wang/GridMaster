@@ -2,11 +2,9 @@
 
 version: 2
 
-# 使用 Sphinx 构建
 sphinx:
   configuration: docs/source/conf.py
 
-# 安装依赖
 python:
   install:
     - requirements: requirements-doc.txt
