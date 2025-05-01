@@ -1,0 +1,108 @@
+/* ========== 标题优化 ========== */
+
+/* 二级标题 h2 */
+.md-typeset h2 {
+    color: #1E88E5; /* Material Blue */
+    font-weight: 700;
+    margin-top: 1.5em;
+}
+
+/* 三级标题 h3 */
+.md-typeset h3 {
+    color: #1565C0; /* Darker Blue */
+    font-weight: 600;
+}
+
+/* ========== 侧边导航栏优化 ========== */
+
+
+.md-sidebar__inner {
+    font-size: 0.95em;
+}
+
+.md-nav__link {
+    color: #37474F; /* 深灰蓝 */
+}
+
+.md-nav__link--active {
+    font-weight: bold;
+    color: #1E88E5; /* 高亮蓝色 */
+}
+.md-nav__title {
+    font-size: 1.1em;
+    font-weight: 800;
+    color: #1E88E5;
+}
+
+/* 一级标题（默认保留） */
+.md-nav__item--level-1 > .md-nav__link {
+    font-weight: 700;
+    color: #1E88E5;  /* 主色，深蓝 */
+}
+
+/* 二级标题（函数分类） */
+.md-nav__item--level-2 > .md-nav__link {
+    font-weight: 900;  /* 加粗 */
+    color: #1565C0;  /* 稍浅蓝或蓝绿 */
+}
+
+/* 三级标题（具体函数） */
+.md-nav__item--level-3 > .md-nav__link {
+    font-weight: 500;
+    color: #546E7A;  /* 灰蓝色，稳重 */
+}
+
+/* 保留 active 高亮效果（已有定义，不覆盖） */
+.md-nav__link--active {
+    font-weight: bold;
+    color: #1E88E5;  /* 高亮蓝 */
+}
+
+/* 保留 hover 效果（如果需要可强化） */
+.md-nav__link:hover {
+    color: #1E88E5;
+}
+
+/* ========== 表格优化 ========== */
+
+.md-typeset table th {
+    background-color: #E3F2FD; /* 淡蓝表头 */
+    font-weight: bold;
+}
+
+.md-typeset table tr:nth-child(even) {
+    background-color: #FAFAFA; /* 偶数行浅灰 */
+}
+
+.md-typeset table tr:nth-child(odd) {
+    background-color: #FFFFFF; /* 奇数行白色 */
+}
+
+/* 防止表格中 code 标签换行 */
+.md-typeset table code {
+    white-space: nowrap;
+}
+
+/* ========== 代码块优化 ========== */
+
+.md-typeset pre code {
+    background-color: #f5f5f5; /* 浅灰背景 */
+    color: #37474F; /* 深灰文字 */
+    font-size: 0.95em;
+    border-radius: 4px;
+    padding: 0.5em;
+}
+
+/* 行内代码优化 */
+.md-typeset code {
+    background-color: #ECEFF1; /* 浅灰蓝背景 */
+    color: #D32F2F; /* 红色强调 */
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+}
+
+/* ========== admonition 块优化 ========== */
+.md-typeset .admonition-title {
+    font-size: 1.05em;
+    font-weight: bold;
+}
