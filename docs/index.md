@@ -51,6 +51,8 @@ Trains and tunes all supported models in parallel, automatically identifies the 
 
 I designed GridMaster to free myself (and others) from the repetitive burden of per-model grid search, offering a clean, unified, and automated workflow for classification tasks.  
 
+It encapsulates the entire **ML pipeline** — from preprocessing and feature selection to model training and evaluation — ensuring reproducibility, modularity, and smooth end-to-end optimization.
+
 > **_“Laziness fuels productivity.”_**
 
 ---
