@@ -3,16 +3,21 @@ from setuptools import setup, find_packages
 # Read README.md
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
-    
+
 setup(
     name='gridmaster',
-    version='0.2.0',
+    version='0.2.1',
     description='A lightweight multi-stage grid search AutoML framework for classifiers. GridMaster v0.2.0: Log-scale search + plot customization features',
     author='Winston Wang',
-    author_email='74311922+wins-wang@users.noreply.github.com',
+    author_email='mail@winston-wang.com',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/wins-wang/GridMaster.git',
+    project_urls={
+    'Documentation': 'https://gridmaster.readthedocs.io',
+    'Source': 'https://github.com/wins-wang/GridMaster',
+    'Bug Tracker': 'https://github.com/wins-wang/GridMaster/issues',
+    },
     license='MIT',
     packages=find_packages(exclude=['examples*', '*.examples', '*.examples.*']),
     include_package_data=True,

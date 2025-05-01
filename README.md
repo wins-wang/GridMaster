@@ -5,6 +5,8 @@ GridMaster is a Python module built for **data scientists** who want flexible an
 > ⚠️ GridMaster is currently designed for **classification tasks only**, and does not yet support regressors.
 
 ---
+# 📖 [Full Documentation](https://gridmaster.readthedocs.io)
+---
 
 ## 🔍 Supported Models
 
@@ -123,7 +125,7 @@ print(classification_report(y_test, y_pred))
 
 - Author: Winston Wang  
 - GitHub: [wins-wang](https://github.com/wins-wang)  
-- Email: 74311922+wins-wang@users.noreply.github.com
+- Email: mail@winston-wang.com
 
 ---
 

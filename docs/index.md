@@ -9,6 +9,8 @@ With just a few lines, GridMaster helps you:
 ✅ Fine-tune around best ranges using smart linear or logarithmic scaling  
 ✅ Run multiple models in parallel, selecting the top performer — all without manual, repetitive grid search loops.
 
+🚧 **Parallel computing support is under active development — stay tuned for faster searches!**
+
 ---
 
 ## 🚀 Supported Models
@@ -67,6 +69,6 @@ I designed GridMaster to free myself (and others) from the repetitive burden of 
 Hi, I’m Winston Wang — a data scientist passionate about making a meaningful contribution to the world, one data-driven solution at a time.
 
 For feedback or suggestions, feel free to email me at:  
-📧 **74311922+wins-wang@users.noreply.github.com**
+📧 **mail@winston-wang.com**
 
 For more about me, please visit [my personal website](https://winston-wang.com).

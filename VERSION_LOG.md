@@ -1,6 +1,17 @@
 # 📘 GridMaster Version History
 
 ---
+## v0.2.1 - 2025-05-01
+
+✨ New
+	•	Added a comprehensive MkDocs-powered user manual with quickstart guide, API reference, and advanced utilities.
+	•	Integrated ReadTheDocs deployment for online documentation access.
+
+🛠 Fixed
+	•	Updated contact email in setup.py and all documentation files to replace the old GitHub noreply address.
+	•	Minor corrections to documentation formatting and navigation.
+
+
 ## v0.2.0 – 2025-05-01
 
 ✨ **Functionality Enhancements**
