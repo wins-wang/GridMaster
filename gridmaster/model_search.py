@@ -31,27 +31,26 @@ from catboost import CatBoostClassifier
 
 def auto_generate_fine_grid(best_params, scale=0.5, steps=5):
     """
-    Generate a fine-tuning parameter grid centered around best_params,
-    and automatically fix or filter out invalid values for compatibility
-    with scikit-learn and other supported classifiers.
+    Automatically generate a refined hyperparameter grid around given best values.
+
+    This function takes the best hyperparameters from a previous coarse search
+    and generates a fine-tuned grid using linear or log-scale interpolation.
+    It also applies parameter-specific constraints to ensure all values are valid.
+
+    Args:
+        best_params (dict): Dictionary of best parameters from a prior GridSearchCV result.
+        scale (float, optional): Relative range to expand above and below each numeric value.
+            Defaults to 0.5.
+        steps (int, optional): Number of values to generate per parameter. Defaults to 5.
+
+    Returns:
+        dict: A refined parameter grid suitable for use in GridSearchCV.
     """
     fine_grid = {}
-    for param, value in best_params.items():
-        if isinstance(value, (int, float)):
-            low = max(0, value * (1 - scale))
-            high = value * (1 + scale)
-            values = np.linspace(low, high, steps)
 
-            if isinstance(value, int):
-                values = sorted(set(int(round(v)) for v in values))
-            else:
-                values = np.round(values, 5).tolist()
+    log_scale_keywords = ['lr', 'learning_rate', 'alpha', 'lambda', 'reg', 'C', 'gamma']
 
-            fine_grid[param] = values
-        else:
-            fine_grid[param] = [value]
-
-    # 🔒 Constraints for common classifier hyperparameters
+    # Constraints for common classifier hyperparameters
     param_constraints = {
         'clf__C': lambda v: isinstance(v, float) and v > 0,
         'clf__max_depth': lambda v: v is None or (isinstance(v, int) and v > 0),
@@ -62,15 +61,58 @@ def auto_generate_fine_grid(best_params, scale=0.5, steps=5):
         'clf__depth': lambda v: isinstance(v, int) and v > 0,
     }
 
-    for param, check_fn in param_constraints.items():
-        if param in fine_grid:
-            fine_grid[param] = [v for v in fine_grid[param] if check_fn(v)]
+    for param, value in best_params.items():
+        if isinstance(value, (int, float)) and value > 0:
+            is_log_scale = (
+                any(kw in param.lower() for kw in log_scale_keywords) or
+                (value >= 1e-3 and value <= 1e3 and np.log10(value) % 1 != 0)
+            )
+            try:
+                if is_log_scale:
+                    low = max(value * (1 - scale), 1e-8)
+                    high = value * (1 + scale)
+                    values = np.logspace(np.log10(low), np.log10(high), steps)
+                else:
+                    low = max(0, value * (1 - scale))
+                    high = value * (1 + scale)
+                    values = np.linspace(low, high, steps)
+                values = sorted(set(np.round(values, 8)))
+                # Apply param-specific constraints if defined
+                if param in param_constraints:
+                    values = [v for v in values if param_constraints[param](v)]
+                if len(values) >= 2:
+                    fine_grid[param] = values
+            except Exception:
+                continue
+        else:
+            # Non-numeric or unsupported: keep original as a single option
+            fine_grid[param] = [value]
 
     return fine_grid
 
 def build_model_config(model_name, custom_coarse_params=None):
     """
-    Define pipeline and coarse grid based on model name.
+    Build a model configuration dictionary including pipeline and coarse hyperparameter grid.
+
+    This function selects a model by name, constructs a preprocessing pipeline with a classifier,
+    and defines a default coarse search parameter grid. Optionally, the default grid can be
+    overridden with user-provided custom parameters.
+
+    Args:
+        model_name (str): Name of the model. Must be one of:
+            - 'logistic'
+            - 'decision_tree'
+            - 'random_forest'
+            - 'xgboost'
+            - 'lightgbm'
+            - 'catboost'
+        custom_coarse_params (dict, optional): User-defined hyperparameter grid to override default.
+            If provided, replaces the default coarse grid for the selected model.
+
+    Returns:
+        dict: A dictionary containing:
+            - 'pipeline': sklearn Pipeline object with preprocessing and classifier
+            - 'coarse_params': Coarse-level hyperparameter grid (dict)
     """
     model_name = model_name.lower()
 

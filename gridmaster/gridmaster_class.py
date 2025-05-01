@@ -16,15 +16,14 @@ class GridMaster:
         """
         Initialize the GridMaster with specified models and training data.
 
-        This constructor sets up the internal model configuration for each model
-        using the provided training dataset and optional custom hyperparameters.
+        This constructor sets up the internal model configuration for each model using the provided training dataset and optional custom hyperparameters.
+
 
         Args:
             models (list): A list of model names (e.g., ['logistic', 'random_forest', 'xgboost']).
             X_train (array-like or DataFrame): Training features.
             y_train (array-like): Training labels.
-            custom_params (dict, optional): Dictionary of custom coarse-level hyperparameters
-                for specific models. Format: {model_name: param_dict}. Defaults to None.
+            custom_params (dict, optional): Dictionary of custom coarse-level hyperparameters for specific models. Format: {model_name: param_dict}. Defaults to None.
 
         Attributes:
             model_dict (dict): Dictionary storing initialized models and their search spaces.
@@ -48,22 +47,23 @@ class GridMaster:
         """
         Perform coarse-level hyperparameter grid search across all models.
 
-        This method iterates through all configured models and performs
-        GridSearchCV using their predefined coarse parameter grids.
+        This method iterates through all configured models and performs GridSearchCV using their predefined coarse parameter grids.
+
         Args:
             scoring (str, optional): Evaluation metric to optimize.
                 Must be one of:
-                    - 'accuracy' (default)
-                    - 'f1'
-                    - 'roc_auc'
-                    - 'precision'
-                    - 'recall'
-                    - or any valid sklearn scorer string
+                - 'accuracy' (default)
+                - 'f1'
+                - 'roc_auc'
+                - 'precision'
+                - 'recall'
+                - or any valid sklearn scorer string
                 Defaults to 'accuracy'.
-                cv (int, optional): Number of cross-validation folds. Defaults to 5.
+
+            cv (int, optional): Number of cross-validation folds. Defaults to 5.
 
         Returns:
-            None: Updates the `results` dictionary with fitted GridSearchCV objects under the 'coarse' key.
+        None: Updates the `results` dictionary with fitted GridSearchCV objects under the 'coarse' key.
         """
         for name, config in self.model_dict.items():
             grid = GridSearchCV(config['pipeline'], config['coarse_params'], scoring=scoring, cv=cv, n_jobs=-1)
@@ -74,26 +74,28 @@ class GridMaster:
         """
         Perform fine-level hyperparameter tuning based on coarse search results.
 
-        This method refines the hyperparameter grid by auto-generating a narrower search space
-        around the best parameters from the coarse search and runs another GridSearchCV.
+        This method refines the hyperparameter grid by auto-generating a narrower search space around the best parameters from the coarse search and runs another GridSearchCV.
+
 
         Args:
             scoring (str, optional): Scoring metric to optimize.
                 Must be one of:
-                    - 'accuracy' (default)
-                    - 'f1'
-                    - 'roc_auc'
-                    - 'precision'
-                    - 'recall'
-                    - or any valid sklearn scorer string
+                - 'accuracy' (default)
+                - 'f1'
+                - 'roc_auc'
+                - 'precision'
+                - 'recall'
+                - or any valid sklearn scorer string
                 Defaults to 'accuracy'.
+
             cv (int, optional): Number of cross-validation folds. Defaults to 5.
-            auto_scale (float, optional): Scaling factor for narrowing the search range
-                (e.g., 0.5 = +/-50% around the best value). Defaults to 0.5.
+
+            auto_scale (float, optional): Scaling factor for narrowing the search range (e.g., 0.5 = +/-50% around the best value). Defaults to 0.5.
+
             auto_steps (int, optional): Number of steps/grid points per parameter in fine grid. Defaults to 5.
 
         Returns:
-            None: Updates the `results` dictionary with the fine-tuned GridSearchCV objects under the 'fine' key.
+        None: Updates the `results` dictionary with the fine-tuned GridSearchCV objects under the 'fine' key.
         """
         for name in self.results:
             coarse_grid = self.results[name]['coarse']
@@ -107,28 +109,30 @@ class GridMaster:
         """
         Perform a multi-stage grid search consisting of one coarse and multiple fine-tuning stages.
 
-        This method first performs a coarse search (if not already done), then iteratively refines
-        the hyperparameter space using a list of `(scale, steps)` tuples.
+        This method first performs a coarse search (if not already done), then iteratively refines the hyperparameter space using a list of `(scale, steps)` tuples.
 
         Args:
             model_name (str): Name of the model to search (must be present in `model_dict`).
             cv (int, optional): Number of cross-validation folds. Defaults to 5.
             scoring (str, optional): Scoring metric to optimize.
                 Must be one of:
-                    - 'accuracy' (default)
-                    - 'f1'
-                    - 'roc_auc'
-                    - 'precision'
-                    - 'recall'
-                    - or any valid sklearn scorer string
+                - 'accuracy' (default)
+                - 'f1'
+                - 'roc_auc'
+                - 'precision'
+                - 'recall'
+                - or any valid sklearn scorer string
                 Defaults to 'accuracy'.
+
             stages (list of tuple, optional): List of (scale, steps) for each fine-tuning stage.
-                For example, [(0.5, 5), (0.2, 5)] means two rounds of fine tuning:
-                ±50% grid with 5 points, then ±20% with 5 points. Defaults to [(0.5, 5), (0.2, 5)].
+             For example, [(0.5, 5), (0.2, 5)] means two rounds of fine tuning:
+             ±50% grid with 5 points, then ±20% with 5 points. Defaults to [(0.5, 5), (0.2, 5)].
+
             verbose (bool, optional): Whether to print progress messages. Defaults to True.
 
+
         Returns:
-            None: Updates the `results` dictionary with intermediate GridSearchCV results for each stage.
+        None: Updates the `results` dictionary with intermediate GridSearchCV results for each stage.
         """
         if model_name not in self.model_dict:
             raise ValueError(f"Model '{model_name}' not found.")
@@ -158,26 +162,29 @@ class GridMaster:
         """
         Compare all trained models on test data using specified evaluation metrics.
 
-        This method selects the best estimator for each model (final → fine → coarse),
-        computes scores on the provided test set, and stores results for later access.
+        This method selects the best estimator for each model (final → fine → coarse), computes scores on the provided test set, and stores results for later access.
 
         Args:
+
             X_test (array-like): Feature test set.
+
             y_test (array-like): Ground truth labels for the test set.
+
             metrics (list of str, optional): Evaluation metrics to compute. List of evaluation metrics to compute.
                 Valid values include:
-                    - 'accuracy'
-                    - 'f1'
-                    - 'roc_auc'
-                    - 'precision'
-                    - 'recall'
+                - 'accuracy'
+                - 'f1'
+                - 'roc_auc'
+                - 'precision'
+                - 'recall'
                 Defaults to ['accuracy', 'f1', 'roc_auc'].
 
             strategy (str, optional): Placeholder for future ranking strategies (currently unused). Defaults to 'rank_sum'.
+
             weights (dict, optional): Placeholder for future weighted metric strategies (currently unused). Defaults to None.
 
         Returns:
-            None: Updates `results` with 'test_scores' and 'best_model' for each model.
+        None: Updates `results` with 'test_scores' and 'best_model' for each model.
         """
         metric_fn = {'accuracy': accuracy_score, 'f1': f1_score, 'roc_auc': roc_auc_score}
         comparison_table = []
@@ -212,9 +219,11 @@ class GridMaster:
         This includes the best estimator, parameters, cross-validation score,
         and test set scores if available.
 
+
         Args:
-            model_name (str, optional): Name of the model to summarize. If None, uses the current
-                `best_model_name` set by the user or internal logic. Defaults to None.
+
+            model_name (str, optional): Name of the model to summarize. If None, uses the current `best_model_name` set by the user or internal logic. Defaults to None.
+
 
         Returns:
             dict: A dictionary with the following keys:
@@ -255,23 +264,30 @@ class GridMaster:
         Args:
             model_name (str): Name of the model whose results will be plotted.
             metric (str, optional): Score metric to plot Score metric to plot.
-                Must be one of the following:
-                    - 'mean_test_score' (default)
-                    - 'mean_train_score'
-                    - 'std_test_score'
-                    - 'std_train_score'
-                    - 'rank_test_score'
-                Defaults to 'mean_test_score'.
+            Must be one of the following:
+                - 'mean_test_score' (default)
+                - 'mean_train_score'
+                - 'std_test_score'
+                - 'std_train_score'
+                - 'rank_test_score'
+            Defaults to 'mean_test_score'.
+
             plot_train (bool, optional): Whether to include training scores in the plot. Defaults to True.
+
             figsize (tuple, optional): Size of the plot in inches (width, height). Defaults to (10, 5).
+
             show_best_point (bool, optional): Whether to mark the best score point on the plot. Defaults to True.
+
             title (str, optional): Custom plot title. If None, a default title will be used. Defaults to None.
+
             xlabel (str, optional): Label for x-axis. Defaults to 'Parameter Set Index'.
+
             ylabel (str, optional): Label for y-axis. If None, uses the `metric`. Defaults to None.
+
             save_path (str, optional): If provided, saves the plot to the specified file path. Defaults to None.
 
         Returns:
-            None: Displays and optionally saves a matplotlib plot.
+        None: Displays and optionally saves a matplotlib plot.
         """
         grid_obj = self.results[model_name].get('final',
                     self.results[model_name].get('fine',
@@ -318,21 +334,31 @@ class GridMaster:
         """
         Plot the confusion matrix for a model's predictions on the test set.
 
+
         Args:
             model_name (str): Name of the model to use for prediction.
+
             X_test (array-like): Test feature set.
+
             y_test (array-like): True labels.
+
             labels (list, optional): List of label names to display in the matrix.
+
             normalize (str or None, optional): Normalization method.
                 Must be one of:
-                    - None (default): No normalization
-                    - 'true': Normalize over the true condition (rows)
-                    - 'pred': Normalize over the predicted condition (columns)
-                    - 'all': Normalize over all values
+                - None (default): No normalization
+                - 'true': Normalize over the true condition (rows)
+                - 'pred': Normalize over the predicted condition (columns)
+                - 'all': Normalize over all values
+
             figsize (tuple, optional): Size of the figure in inches. Defaults to (6, 5).
+
             cmap (str or Colormap, optional): Colormap to use (e.g., 'Blues', 'viridis'). Defaults to 'Blues'.
+
             title (str, optional): Title of the plot. If None, uses default format. Defaults to None.
+
             save_path (str, optional): If specified, saves the figure to this path. Defaults to None.
+
 
         Returns:
             None: Displays and optionally saves the confusion matrix plot.
@@ -369,6 +395,7 @@ class GridMaster:
     ):
         """
         Plot the top N coefficients of a linear model for interpretability.
+
 
         Args:
             model_name (str): Name of the model whose coefficients will be plotted.
@@ -423,6 +450,7 @@ class GridMaster:
         """
         Plot the top N feature importances from a tree-based model.
 
+
         Args:
             model_name (str): Name of the model to visualize.
             top_n (int, optional): Number of top features to display. Defaults to 20.
@@ -464,12 +492,11 @@ class GridMaster:
         """
         Retrieve cross-validation results from GridSearchCV for a specific model.
 
+
         Args:
             model_name (str): Name of the model to retrieve results for.
-            use_fine (bool, optional): Whether to retrieve from fine-tuned results (`final`)
-                or coarse-level results. Defaults to True.
-            as_dataframe (bool, optional): If True, returns results as a pandas DataFrame.
-                If False, returns the raw `cv_results_` dictionary. Defaults to True.
+            use_fine (bool, optional): Whether to retrieve from fine-tuned results (`final`) or coarse-level results. Defaults to True.
+            as_dataframe (bool, optional): If True, returns results as a pandas DataFrame. If False, returns the raw `cv_results_` dictionary. Defaults to True.
 
         Returns:
             Union[pd.DataFrame, dict]: Cross-validation results in the selected format.
@@ -483,9 +510,11 @@ class GridMaster:
 
         This function creates a subdirectory under `folder_path` named after the model,
         and stores:
-          - The final fitted model (`model_final.joblib`)
-          - A JSON summary of model performance and parameters (`best_model_summary.json`)
-          - CSV files of cross-validation results for all search stages (e.g., coarse, fine)
+
+            - The final fitted model (`model_final.joblib`)
+            - A JSON summary of model performance and parameters (`best_model_summary.json`)
+            - CSV files of cross-validation results for all search stages (e.g., coarse, fine)
+
 
         Args:
             model_name (str): Name of the model to export.
@@ -513,10 +542,10 @@ class GridMaster:
         `export_model_package()` on each of them. Optionally appends a timestamp
         to each model's output directory to avoid overwriting.
 
+
         Args:
             folder_path (str, optional): Base folder to export model files. Defaults to 'model_exports'.
-            use_timestamp (bool, optional): If True, appends a timestamp to each model folder name.
-                Useful for versioning and avoiding overwrite. Defaults to True.
+            use_timestamp (bool, optional): If True, appends a timestamp to each model folder name. Useful for versioning and avoiding overwrite. Defaults to True.
 
         Returns:
             None
@@ -534,8 +563,8 @@ class GridMaster:
         """
         Load a saved model package from disk, including the estimator, summary, and CV results.
 
-        This function reads the saved model (.joblib), summary (.json), and cross-validation
-        result files (.csv) from the given folder, and stores them in `self.results`.
+        This function reads the saved model (.joblib), summary (.json), and cross-validation result files (.csv) from the given folder, and stores them in `self.results`.
+
 
         Args:
             model_name (str): Name of the model to load.
@@ -566,10 +595,8 @@ class GridMaster:
         """
         Load all saved model packages from the specified folder.
 
-        This function iterates through all subdirectories in `folder_path`, assumes
-        each contains a model export (via `export_model_package()`), and calls
+        This function iterates through all subdirectories in `folder_path`, assumes each contains a model export (via `export_model_package()`), and calls
         `load_model_package()` to load them into `self.results`.
-
         Model names are inferred from subdirectory names (before first underscore if timestamped).
 
         Args:
