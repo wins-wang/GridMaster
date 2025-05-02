@@ -6,24 +6,114 @@
 
 ---
 
+### Advanced Setting - **CPU Parallelism `(n_jobs)`**
+
+GridMaster internally uses `GridSearchCV`, which supports parallel computation through the n_jobs parameter.
+
+By **default**, GridMaster detects the number of CPU cores on your machine at runtime and uses **half of the available cores** to balance performance and system load.
+
+- To maximize speed, set `n_jobs = -1` when initializing GridMaster (uses all CPU cores).
+- To fully control parallelism, pass any integer value to `n_jobs` during GridMaster initialization.
+
+
+
+⚠️ **Warning**:
+
+Using all cores (`n_jobs = -1`) may **overload your system** if you run multiple processes in parallel. Make sure to monitor system load, especially on shared or production environments.
+
+---
+
+#### Example
+
+```python
+gm = GridMaster(
+    models=['xgboost', 'lightgbm'],
+    X_train=X_train,
+    y_train=y_train,
+    n_jobs=-1  # ← use all cpu cores
+)
+```
+
+---
+
+---
+
+### Advanced Setting – Custom Estimator Parameters `(custom_estimator_params)`
+
+GridMaster allows you to directly pass **custom initialization parameters** to underlying models (estimators) through the custom_estimator_params argument.
+
+
+
+This is particularly useful if you want to:
+
+✅ Enable GPU acceleration in models like XGBoost, LightGBM, or CatBoost
+
+✅ Change default internal settings (e.g., booster, subsample, colsample_bytree)
+
+✅ Fine-tune model-level behavior **before** the hyperparameter search even starts
+
+---
+
+#### Example
+
+By **default**, GridMaster uses standard CPU-based estimators. To leverage GPU or other advanced options, pass a dictionary like this:
+
+```python
+gm = GridMaster(
+    models=['xgboost', 'lightgbm', 'catboost'],
+    X_train=X_train,
+    y_train=y_train,
+    custom_estimator_params={
+        'xgboost': {'tree_method': 'gpu_hist'},
+        'lightgbm': {'device': 'gpu'},
+        'catboost': {'task_type': 'GPU'}
+    }
+)
+```
+
+------
+
+
+
+⚠️ **Warning**:
+
+To use GPU modes, ensure you have the **correct libraries installed** and your environment supports GPU.
+
+For example:
+
+
+
+- **XGBoost** must be compiled with GPU support.
+- **LightGBM** needs the GPU-enabled version.
+- **CatBoost** requires proper CUDA drivers.
+
+
+
+Trying to enable GPU without the right setup may lead to **silent fallback to CPU** or runtime errors.
+
+
+
+---
+
+---
+
 ### Advanced Utility **`.auto_generate_fine_grid()`**
 
-Automatically generate a fine-grained hyperparameter grid  
-around the best parameters from the coarse search.
+Automatically generate a fine-grained hyperparameter grid around the best parameters from the coarse search.
 
-This method intelligently determines whether a parameter  
-should be scaled linearly or logarithmically,  
-and creates a narrowed search space centered on the best-known value.
+This method intelligently determines whether a parameter should be scaled linearly or logarithmically,  and creates a narrowed search space centered on the best-known value.
 
 ---
 
 #### **Args**
 
-| Parameter       | Type               | Description                                                                                                                                                    | Default    |
-|-----------------|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| `best_params`   | dict               | Best parameter values obtained from the coarse search.                                                                                                          | —          |
-| `auto_scale`    | float, optional    | Scaling factor for narrowing the search range (e.g., `0.5` → ±50% around the best value).                                                                      | 0.5        |
-| `auto_steps`    | int, optional      | Number of steps/grid points per parameter in the fine grid.                                                                                                    | 5          |
+| Parameter           | Type            | Description                                                  | Default |
+| ------------------- | --------------- | ------------------------------------------------------------ | ------- |
+| `best_params`       | dict            | Best parameter values obtained from the coarse search.       | —       |
+| `scale`             | float, optional | Scaling factor for narrowing the search range (e.g., `0.5` → ±50% around the best value). | 0.5     |
+| `steps`             | int, optional   | Number of steps/grid points per parameter in the fine grid.  | 5       |
+| `keys`              | list, optional  | Specific parameter keys to include. If None, defaults to ['learning_rate']. Used in expert or smart fine-tuning modes to focus search on important parameters.<br />If None, defaults to ['learning_rate'] in expert mode, or uses smart selection. | `None`  |
+| `coarse_param_grid` | Dict, optional  | Original coarse grid. Used to ensure parameters selected for fine-tuning had meaningful variation in the coarse stage. | `None`  |
 
 ---
 
@@ -67,9 +157,11 @@ for supported models such as `'logistic'`, `'random_forest'`, `'xgboost'`, `'lig
 
 #### **Args**
 
-| Parameter      | Type    | Description                                                                                                       | Default  |
-|----------------|---------|-----------------------------------------------------------------------------------------------------------------|----------|
-| `model_name`   | str     | Name of the model to configure. Must be one of `'logistic'`, `'random_forest'`, `'xgboost'`, `'lightgbm'`, or `'catboost'`. | —        |
+| Parameter                 | Type           | Description                                                  | Default |
+| ------------------------- | -------------- | ------------------------------------------------------------ | ------- |
+| `model_name`              | str            | Name of the model to configure. Must be one of `'logistic'`, `'random_forest'`, `'xgboost'`, `'lightgbm'`, or `'catboost'`. | —       |
+| `custom_coarse_params`    | dict, optional | User-defined hyperparameter grid to override default.        | `None`  |
+| `custom_estimator_params` | dict, optional | Additional estimator-specific parameters (e.g., GPU settings, tree method) to inject into the model. | `None`  |
 
 ---
 

@@ -1,6 +1,27 @@
 # 📘 GridMaster Version History
 
 ---
+## v0.3.1 – 2025-05-02 Bugfixes & Usability Enhancements
+	•	Fixed stage naming in reports (removed raw stage1 suffix).
+	•	Improved fallback when fine grids are too narrow or degenerate.
+	•	Enhanced user tips and warning messages for clearer guidance.
+	•	Report generation now skips models without valid search results.
+	•	Polished docstrings, outputs, and internal messages for consistency.
+
+## v0.3.0 – 2025-05-02 Smart Fine-Tuning & Multi-Stage Upgrade
+	•	Added smart, expert, custom modes to fine_search and multi_stage_search.
+	•	Implemented _identify_important_params for automatic selection of key tuning parameters.
+	•	Enhanced auto_generate_fine_grid() to handle parameter constraints and fallback safely.
+	•	Added custom_estimator_params interface for injecting model-specific (e.g., GPU) arguments.
+	•	Improved logging with clear stage names, icons (🔍, 🔧), and better readability.
+	•	Enhanced final report: now summarizes stage-by-stage best parameters and overall best model.
+
+## v0.2.2 – 2025-05-02 Advanced Parameters Added
+	•	Exposed n_jobs, verbose, refit, return_train_score as configurable arguments.
+	•	Passed these into all GridSearchCV calls to enable advanced parallelism and control.
+	•	Updated docstrings for clarity.
+	•	Fully backward-compatible.
+
 ## v0.2.1 - 2025-05-01
 
 ✨ New

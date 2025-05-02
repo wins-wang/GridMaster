@@ -21,7 +21,12 @@ This constructor sets up the internal model configuration for each model using t
 | `models`        | list                   | A list of model names (e.g., `'logistic'`, `'random_forest'`, `'xgboost'`).                                                                      | –       |
 | `X_train`       | array-like or DataFrame | Training features.                                                                                                                               | –       |
 | `y_train`       | array-like             | Training labels.                                                                                                                                 | –       |
-| `custom_params` | dict, optional         | Dictionary of custom coarse-level hyperparameters for specific models. Format: `{model_name: param_dict}`. Defaults to `None`.                     | `None`  |
+| `custom_params` | dict, optional         | Dictionary of custom coarse-level hyperparameters for specific models. Format: `{model_name: param_dict}`.                     | `None`  |
+| `custom_estimator_params` | dict, optional | Dictionary of custom estimator (model) initialization parameters. Format: `{model_name: param_dict}` Useful for enabling options like GPU. | `None` |
+| `njobs` | int, optional | Number of parallel jobs for GridSearchCV. Defaults to **half of the total detected CPU cores** (based on system hardware). Use -1 to utilize all CPU cores. | **half of total CPU cores** |
+| `verbose` | int, optional | Verbosity level for GridSearchCV. Controls how much logging is printed. <br />Recommendation: <br />- Beginner or clean run`0`  to suppress all messages.<br />- Medium-scale tasks where you want to monitor progress use `1` , especially for: Large grid searches where you want to know it’s still active, or Getting a rough idea of where the search is in its progress<br />- Advanced users or debugging use `2` or higher to see detailed cross-validation steps and logs from the estimators themselves. | `1` |
+| `refit` | bool, optional | Whether to refit the best estimator on the entire dataset after search. | `True` |
+| `return_train_score` | bool, optional | Whether to include training set scores in cv_results_. | `False` |
 
 ---
 
@@ -35,6 +40,10 @@ This constructor sets up the internal model configuration for each model using t
 | `results`         | dict         | Stores search results for each model.                              |
 | `best_model_name` | str          | Name of the currently best-performing model.                       |
 | `feature_names`   | list         | List of feature names for plotting and explanation.                |
+| `njobs` | int | Number of parallel jobs for GridSearchCV. |
+| `verbose` | int | Verbosity level for GridSearchCV. |
+| `refit` | bool | Whether to refit the best estimator after grid search. |
+| `return_train_score` | bool | Whether training scores are included in cv_results_. |
 
 ---
 
@@ -73,6 +82,17 @@ This method modifies the **`results`** dictionary in-place.
 
 ---
 
+#### Notes:
+
+This method internally uses the following advanced GridSearchCV parameters, set during GridMaster initialization:
+
+-  `n_jobs`: Number of parallel jobs. Defaults to None (single-threaded). Use `-1` for all CPU cores.
+- `verbose`: Verbosity level. Controls logging detail.
+- `refit`: Whether to refit the best model on the entire dataset after search.
+- `return_train_score`: Whether to include training set scores in the results.
+
+---
+
 #### **Example**
 
 <pre>
@@ -89,18 +109,57 @@ gm.coarse_search(scoring='f1', cv=5)
 
 Performs fine-level hyperparameter tuning based on coarse search results.
 
-This method refines the hyperparameter grid by auto-generating a narrower search space around the best parameters from the coarse search and runs another GridSearchCV.
+This method refines the hyperparameter grid by auto-generating a narrower search space around the best parameters from the coarse search and runs another GridSearchCV.  
+It now supports **smart**, **expert**, or **custom** fine-tuning modes.
 
 ---
 
 #### **Args**
 
-| Parameter    | Type            | Description                                                                                                                                  | Default      |
-| ------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| `scoring`    | str, optional   | Scoring metric to optimize. Must be one of `'accuracy'`, `'f1'`, `'roc_auc'`, `'precision'`, `'recall'`, or any valid sklearn scorer string. | `'accuracy'` |
-| `cv`         | int, optional   | Number of cross-validation folds.                                                                                                            | 5            |
-| `auto_scale` | float, optional | Scaling factor for narrowing the search range (e.g., `0.5` = ±50% around the best value).                                                    | 0.5          |
-| `auto_steps` | int, optional   | Number of steps/grid points per parameter in fine grid.                                                                                      | 5            |
+| Parameter            | Type            | Description                                                  | Default      |
+| -------------------- | --------------- | ------------------------------------------------------------ | ------------ |
+| `scoring`            | str, optional   | Scoring metric to optimize. Must be one of `'accuracy'`, `'f1'`, `'roc_auc'`, `'precision'`, `'recall'`, or any valid sklearn scorer string. | `'accuracy'` |
+| `cv`                 | int, optional   | Number of cross-validation folds.                            | 5            |
+| `auto_scale`         | float, optional | Scaling factor for narrowing the search range (e.g., `0.5` = ±50% around the best value). Applies to both linear and log-scale parameters. | 0.5          |
+| `auto_steps`         | int, optional   | Number of steps/grid points per parameter in fine grid.      | 5            |
+| `search_mode`        | str, optional   | Fine-tuning mode. Choose from `'smart'` (auto-select most important params), `'expert'` (only adjusts learning rate, max depth), or `'custom'` (use provided `custom_fine_params`). | `'smart'`    |
+| `custom_fine_params` | dict, optional  | Custom fine-tuning grid when `search_mode='custom'`. If provided, it overrides auto-generated grids. | None         |
+
+---
+
+#### **Modes (smart / expert / custom)**
+
+##### **`smart` mode**
+
+- **Default behavior**: Automatically selects the top-2 most impactful hyperparameters from coarse search results.
+
+- **How it works**:
+
+  1. Extracts GridSearchCV.cv_results_ and looks at how each hyperparameter’s different values affect mean_test_score.
+
+  2. Calculates the performance variation range (max - min average score) for each parameter.
+
+  3. Selects the top-N (default 2) parameters with the largest variation as the focus of fine-tuning.
+
+- **Best for**: Users who want automated, data-driven refinement without needing to pre-select key parameters.
+
+- **Caution**: If the coarse grid was too narrow or the data is insensitive to certain parameters, the generated fine grid may collapse to a single combination and skip fine-tuning.
+
+##### **`expert` mode**
+
+- **Default behavior**: Focuses on well-known, domain-recommended hyperparameters that typically have strong influence.
+- **Current configuration**:
+  - LogisticRegression: `'clf__C'`
+  - RandomForest: `'clf__max_depth'`,` 'clf__min_samples_split'`
+  - XGBoost, LightGBM, CatBoost: `'clf__learning_rate'`, `'clf__max_depth'`
+- **Best for**: Users who trust established best practices and want to emphasize proven sensitive parameters.
+- **Caution**: This mode is not data-adaptive; it may overlook dataset-specific influences that fall outside the “usual suspects.”
+
+##### **`custom` mode**
+
+- **Default behavior**: Uses user-supplied custom_fine_params to directly define the fine-tuning grid.
+- **Best for**: Advanced users who want full control or have domain-specific knowledge about optimal parameter ranges.
+- **Caution**: You are responsible for ensuring the parameter grid is meaningful; an overly narrow grid may result in only one combination and skip fine-tuning.
 
 ---
 
@@ -110,17 +169,53 @@ This method refines the hyperparameter grid by auto-generating a narrower search
 
 ---
 
- ⚠️ **Warning:**  
- This method modifies the **`results`** dictionary in-place.
+⚠️ **Warning:**  
+This method modifies the **`results`** dictionary in-place.
+
+---
+
+#### **Notes**
+
+This method internally uses the following advanced GridSearchCV parameters, set during GridMaster initialization:
+
+-  `n_jobs`: Number of parallel jobs. Defaults to half of CPU cores (detected at runtime). Use `-1` for all cores.
+-  `verbose`: Verbosity level. Controls logging detail.
+-  `refit`: Whether to refit the best model on the entire dataset after search.
+-  `return_train_score`: Whether to include training set scores in the results.
+
+---
 
 #### **Example**
 
-<pre>
 ```python
-gm = GridMaster()
-gm.fine_search(scoring='roc_auc', cv=5, auto_scale=0.3, auto_steps=7)
+gm.fine_search(
+    scoring='roc_auc',
+    cv=5,
+    auto_scale=0.3,
+    auto_steps=7,
+    search_mode='smart'
+)
+
+# Or using expert mode:
+gm.fine_search(
+    scoring='accuracy',
+    cv=3,
+    search_mode='expert'
+)
+
+# Or using custom mode:
+custom_grid = {
+    'clf__n_estimators': [100, 200, 300],
+    'clf__max_depth': [3, 5, 7]
+}
+gm.fine_search(
+    scoring='f1',
+    cv=4,
+    search_mode='custom',
+    custom_fine_params=custom_grid
+)
 ```
-</pre>
+
 
 ---
 
@@ -129,19 +224,58 @@ gm.fine_search(scoring='roc_auc', cv=5, auto_scale=0.3, auto_steps=7)
 
 Perform a multi-stage grid search consisting of one coarse and multiple fine-tuning stages.
 
-This method first performs a coarse search (if not already done), then iteratively refines the hyperparameter space using a list of `(scale, steps)` tuples.
+This method first performs a coarse search (if not already done), then iteratively refines the hyperparameter space using a list of `(scale, steps)` tuples.  
+You can now choose **smart**, **expert**, or **custom** mode for each fine stage.
 
 ---
 
 #### **Args**
 
-| Parameter    | Type                    | Description                                                                                                                                            | Default                |
-| ------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
-| `model_name` | str                     | Name of the model to search (must be present in `model_dict`).                                                                                         | —                      |
-| `cv`         | int, optional           | Number of cross-validation folds.                                                                                                                      | 5                      |
-| `scoring`    | str, optional           | Scoring metric to optimize. Must be one of `'accuracy'`, `'f1'`, `'roc_auc'`, `'precision'`, `'recall'`, or any valid sklearn scorer string.           | `'accuracy'`           |
-| `stages`     | list of tuple, optional | List of (scale, steps) for each fine-tuning stage. Example: `[(0.5, 5), (0.2, 5)]` means two rounds: ±50% grid with 5 points, then ±20% with 5 points. | `[(0.5, 5), (0.2, 5)]` |
-| `verbose`    | bool, optional          | Whether to print progress messages.                                                                                                                    | True                   |
+| Parameter            | Type                    | Description                                                  | Default                |
+| -------------------- | ----------------------- | ------------------------------------------------------------ | ---------------------- |
+| `model_name`         | str                     | Name of the model to search (must be present in `model_dict`). | —                      |
+| `cv`                 | int, optional           | Number of cross-validation folds.                            | 5                      |
+| `scoring`            | str, optional           | Scoring metric to optimize. Must be one of `'accuracy'`, `'f1'`, `'roc_auc'`, `'precision'`, `'recall'`, or any valid sklearn scorer string. | `'accuracy'`           |
+| `stages`             | list of tuple, optional | List of `(scale, steps)` for each fine-tuning stage. Example: `[(0.5, 5), (0.2, 5)]` means two rounds: ±50% grid with 5 points, then ±20% with 5 points. | `[(0.5, 5), (0.2, 5)]` |
+| `search_mode`        | str, optional           | Fine-tuning mode for all fine stages. Choose from `'smart'`, `'expert'`, or `'custom'`. | `'smart'`              |
+| `custom_fine_params` | dict, optional          | Custom fine-tuning grid if `search_mode='custom'`.           | None                   |
+| `verbose`            | bool, optional          | Whether to print progress messages.                          | True                   |
+
+---
+
+#### **Modes (smart / expert / custom)**
+
+##### **`smart` mode**
+
+- **Default behavior**: Automatically selects the top-2 most impactful hyperparameters from coarse search results.
+
+- **How it works**:
+
+  1. Extracts GridSearchCV.cv_results_ and looks at how each hyperparameter’s different values affect mean_test_score.
+
+  2. Calculates the performance variation range (max - min average score) for each parameter.
+
+  3. Selects the top-N (default 2) parameters with the largest variation as the focus of fine-tuning.
+
+- **Best for**: Users who want automated, data-driven refinement without needing to pre-select key parameters.
+
+- **Caution**: If the coarse grid was too narrow or the data is insensitive to certain parameters, the generated fine grid may collapse to a single combination and skip fine-tuning.
+
+##### **`expert` mode**
+
+- **Default behavior**: Focuses on well-known, domain-recommended hyperparameters that typically have strong influence.
+- **Current configuration**:
+  - LogisticRegression: `'clf__C'`
+  - RandomForest: `'clf__max_depth'`,` 'clf__min_samples_split'`
+  - XGBoost, LightGBM, CatBoost: `'clf__learning_rate'`, `'clf__max_depth'`
+- **Best for**: Users who trust established best practices and want to emphasize proven sensitive parameters.
+- **Caution**: This mode is not data-adaptive; it may overlook dataset-specific influences that fall outside the “usual suspects.”
+
+##### **`custom` mode**
+
+- **Default behavior**: Uses user-supplied custom_fine_params to directly define the fine-tuning grid.
+- **Best for**: Advanced users who want full control or have domain-specific knowledge about optimal parameter ranges.
+- **Caution**: You are responsible for ensuring the parameter grid is meaningful; an overly narrow grid may result in only one combination and skip fine-tuning.
 
 ---
 
@@ -151,17 +285,55 @@ This method first performs a coarse search (if not already done), then iterative
 
 ---
 
- ⚠️ **Warning:**  
- This method modifies the **`results`** dictionary in-place.
+⚠️ **Warning:**  
+This method modifies the **`results`** dictionary in-place.
+
+---
+
+#### **Notes**
+
+This method internally uses the following advanced GridSearchCV parameters, set during GridMaster initialization:
+
+-  `n_jobs`: Number of parallel jobs. Defaults to half of CPU cores (detected at runtime). Use `-1` for all cores.
+-  `verbose`: Verbosity level. Controls logging detail.
+-  `refit`: Whether to refit the best model on the entire dataset after search.
+-  `return_train_score`: Whether to include training set scores in the results.
+
+---
 
 #### **Example**
 
-<pre>
 ```python
-gm = GridMaster()
-gm.multi_stage_search('xgboost', scoring='f1', stages=[(0.4, 4), (0.2, 6)])
+gm.multi_stage_search(
+    model_name='xgboost',
+    scoring='accuracy',
+    cv=3,
+    stages=[(0.5, 5), (0.2, 5)],
+    search_mode='smart'
+)
+
+# Or using expert mode:
+gm.multi_stage_search(
+    model_name='lightgbm',
+    scoring='roc_auc',
+    search_mode='expert'
+)
+
+# Or using custom mode:
+custom_grid = {
+    'clf__n_estimators': [100, 200, 300],
+    'clf__max_depth': [3, 5, 7]
+}
+gm.multi_stage_search(
+    model_name='catboost',
+    scoring='f1',
+    search_mode='custom',
+    custom_fine_params=custom_grid
+)
 ```
-</pre>
+
+
+
 
 ---
 
@@ -246,6 +418,31 @@ print(summary['best_params'])
 ---
 
 ---
+### Method `.generate_search_report()`
+
+Generate a detailed multi-stage search report across all models, summarizing parameter grids, best parameter sets, and best metric scores.
+
+---
+
+#### Returns:
+​            str: A formatted multi-line text report summarizing the entire search process.
+
+---
+
+**Example**
+
+<pre>
+```python
+gm.generate_search_report() 
+```
+</pre>
+
+
+
+---
+
+---
+
 ### Method **`.get_cv_results()`**
 
 Retrieve cross-validation results from GridSearchCV for a specific model.

@@ -14,7 +14,7 @@ nav:
   - Quickstart: usage.md
   - GridMaster Tools:
       - Essential Tools: api/core_api.md
-      - Advanced Utilities: api/advanced_api.md
+      - Advanced Usage: api/advanced_api.md
 
 markdown_extensions:
   - toc:

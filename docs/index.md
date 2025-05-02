@@ -7,9 +7,25 @@ With just a few lines, GridMaster helps you:
 ✅ Automatically optimize key classifiers over your dataset  
 ✅ Narrow down from broad industry-recommended parameter grids  
 ✅ Fine-tune around best ranges using smart linear or logarithmic scaling  
-✅ Run multiple models in parallel, selecting the top performer — all without manual, repetitive grid search loops.
+✅ Run multiple models in parallel, selecting the top performer — all without manual, repetitive grid search loops  
+✅ Balance system load and performance by default, using half of available CPU cores for parallel search — adjustable for advanced users (see [Advanced Setting – CPU Parallelism (n_jobs)](api/advanced_api/#advanced-setting-cpu-parallelism-n_jobs))  
+✅ Enable GPU acceleration for XGBoost, LightGBM, CatBoost via custom estimator flags — see [Advanced Setting – Custom Estimator Parameters (custom_estimator_params)](api/advanced_api/#advanced-setting-custom-estimator-parameters-custom_estimator_params)  
 
-🚧 **Parallel computing support is under active development — stay tuned for faster searches!**
+---
+
+>  ⚙️ ***New* in v 0.3.x**  
+>
+> **Smart, Expert, and Custom fine-tuning modes:**  
+>
+> - **Smart**: Automatically selects top 2 impactful hyperparameters based on variation analysis.
+>
+> - **Expert**: Focuses on commonly sensitive parameters like `learning_rate` and `max_depth`.
+>
+> - **Custom**: User-defined fine grids. 
+>
+> **Parallel CPU support:** Automatically detects available CPU cores and assigns half for faster parallel search (`n_jobs`), balancing speed and system performance. You can override this manually if needed.
+>
+> **Enable GPU Acceleration**: Directly pass GPU-specific flags (like tree_method='gpu_hist') to **XGBoost**, **LightGBM**, and **CatBoost** via `custom_estimator_params`.
 
 ---
 
@@ -32,18 +48,16 @@ GridMaster currently supports **classification models** only:
 ## 🔍 How It Works
 
 1. **Coarse Search**  
-Starts with broad, commonly recommended parameter grids for each classifier (e.g., C, max_depth, learning_rate), providing a robust initial exploration of the search space.
-
+  Starts with broad, commonly recommended parameter grids for each classifier (e.g., C, max_depth, learning_rate), providing a robust initial exploration of the search space.
 2. **Fine Search**  
-Automatically refines parameter ranges around the best coarse result:  
-For **linear-scale parameters**, narrows range by ±X% (default ±50%)  
-For **log-scale parameters** (like C, learning_rate), adjusts intelligently on the log scale ensuring meaningful search coverage without wasting runs.
-
+  Automatically refines parameter ranges around the best coarse result:  
+  For **linear-scale parameters**, narrows range by ±X% (default ±50%)  
+  For **log-scale parameters** (like C, learning_rate), adjusts intelligently on the log scale ensuring meaningful search coverage without wasting runs.
 3. **Multi-Stage Search**  
-Allows multiple fine-tuning rounds with custom precision, eliminating the need to manually loop grid searches for each model.
-
-4. **Multi-Model Comparison**  
-Trains and tunes all supported models in parallel, automatically identifies the top performer, and outputs detailed metrics and plots for interpretation.
+  Allows multiple fine-tuning rounds with custom precision, eliminating the need to manually loop grid searches for each model.
+4. **By default, both Fine Search and Multi-Stage Search focus on the top 2 most impactful parameters (based on performance variation observed during the coarse search stage) for refinement.**
+5. **Multi-Model Comparison**  
+  Trains and tunes all supported models in parallel, automatically identifies the top performer, and outputs detailed metrics and plots for interpretation.
 
 ---
 
