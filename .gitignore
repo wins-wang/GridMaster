@@ -22,3 +22,6 @@ docs/build/
 # VSCode or PyCharm
 .vscode/
 .idea/
+
+# catboost 
+catboost_info/
