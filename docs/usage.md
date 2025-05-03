@@ -57,11 +57,11 @@ This will:
 ✅ Then perform a **narrower, fine-grained search** around the best coarse parameters,  
 ✅ Efficiently balance exploration and exploitation for better-tuned models.
 
-> *By default, GridMaster balances system load and speed by using **half of available CPU** cores for parallel search; advanced users can adjust this with the* `n_jobs` *parameter (see* [*Advanced Settings*](api/advanced_api/#advanced-setting-cpu-parallelism-n_jobs)*).*
+> *By default, GridMaster balances system load and speed by using **half of available CPU** cores for parallel search; advanced users can adjust this with the* `n_jobs` *parameter (see* [*Advanced Settings*](/api/advanced_api/#advanced-setting-cpu-parallelism-n_jobs)*).*
 >
 > *By default, `fine_search` uses **smart mode**, automatically refining the top 2 impactful parameters based on coarse search performance variation. See [Modes](api/core_api.md#method-fine_search) for details.*
 >
-> *Advanced users can also pass custom **GPU-related estimator parameters** (e.g., `tree_method='gpu_hist'` for XGBoost) through the* `custom_estimator_params` *argument (see* [*Advanced Settings*](api/advanced_api/#advanced-setting-custom-estimator-parameters-custom_estimator_params)*).*
+> *Advanced users can also pass custom **GPU-related estimator parameters** (e.g., `tree_method='gpu_hist'` for XGBoost) through the* `custom_estimator_params` *argument (see* [*Advanced Settings*](/api/advanced_api/#advanced-setting-custom-estimator-parameters-custom_estimator_params)*).*
 
 ---
 
