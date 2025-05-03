@@ -9,7 +9,7 @@ With just a few lines, GridMaster helps you:
 ✅ Fine-tune around best parameter ranges using smart linear or logarithmic scaling  
 ✅ Run multiple models in parallel, automatically selecting the top performer — no manual, repetitive grid search loops needed  
 ✅ Fully compatible with GridSearchCV workflows — migrate easily without added learning costs, including advanced settings like GPU acceleration  
-✅ Balance system load and performance by default, using half of available CPU cores for parallel search — adjustable for advanced users (see [Advanced Setting – CPU Parallelism (n_jobs)](api/#advanced-setting-cpu-parallelism-n_jobs))
+✅ Balance system load and performance by default, using half of available CPU cores for parallel search — adjustable for advanced users (see [Advanced Setting – CPU Parallelism (n_jobs)](api/advanced_api/#advanced-setting-cpu-parallelism-n_jobs))
 
 ---
 
