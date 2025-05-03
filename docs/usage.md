@@ -46,7 +46,9 @@ By default, you can run:
 ```python
 from gridmaster import GridMaster
 
-gm = GridMaster()
+# Initialize with at least one model
+gm = GridMaster(models=['logistic', 'random_forest'])
+
 gm.coarse_search()
 gm.fine_search()
 ```
