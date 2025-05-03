@@ -29,5 +29,3 @@ extra_javascript:
 
 extra_css:
   - css/custom.css
-
-site_url: https://gridmaster.readthedocs.io/en/main
