@@ -8,11 +8,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, confusion_matrix, ConfusionMatrixDisplay, precision_score, recall_score
 from .model_search import auto_generate_fine_grid, build_model_config
 
 class GridMaster:
-    def __init__(self, models, X_train, y_train, custom_params=None, custom_estimator_params=None, n_jobs=None, verbose=1, refit=True, return_train_score=False):
+    def __init__(self, models, X_train, y_train, mode='fast', custom_params=None, custom_estimator_params=None, n_jobs=None, verbose=1, refit=True, return_train_score=False):
         """
         Initialize the GridMaster with specified models and training data.
 
@@ -23,6 +23,7 @@ class GridMaster:
             models (list): A list of model names (e.g., ['logistic', 'random_forest', 'xgboost']).
             X_train (array-like or DataFrame): Training features.
             y_train (array-like): Training labels.
+            mode (str, optional): 'fast' (default) for quick runs; 'industrial' for heavier optimization.
             custom_params (dict, optional): Dictionary of custom coarse-level hyperparameters for specific models. Format: {model_name: param_dict}. Defaults to None.
             custom_estimator_params(dict, optional): Dictionary of custom estimator (model) initialization parameters.
                 Format: {model_name: param_dict}. Useful for enabling options like GPU. Defaults to None.
@@ -47,17 +48,25 @@ class GridMaster:
         for model_name in models:
             coarse_params = custom_params.get(model_name) if custom_params else None
             estimator_params = custom_estimator_params.get(model_name) if custom_estimator_params else None
-            self.model_dict[model_name] = build_model_config(model_name, custom_coarse_params=coarse_params, custom_estimator_params=estimator_params)
+            self.model_dict[model_name] = build_model_config(
+                model_name,
+                X_train,
+                mode=mode,
+                custom_coarse_params=coarse_params,
+                custom_estimator_params=estimator_params
+            )
+
         self.X_train = X_train
         self.y_train = y_train
         self.results = {}
         self.best_model_name = None
         self.feature_names = list(X_train.columns) if hasattr(X_train, 'columns') else [f"Feature {i}" for i in range(X_train.shape[1])]
-        import multiprocessing
-        if n_jobs is None: n_jobs = max(1, multiprocessing.cpu_count() // 2)
 
+        import multiprocessing
+        if n_jobs is None:
+            n_jobs = max(1, multiprocessing.cpu_count() // 2)
         self.n_jobs = n_jobs
-        self.n_jobs = n_jobs
+
         self.verbose = verbose
         self.refit = refit
         self.return_train_score = return_train_score
@@ -170,21 +179,34 @@ class GridMaster:
             coarse_grid = self.results[name]['coarse']
             best_params = coarse_grid.best_params_
 
-
             if search_mode == 'smart':
                 important_params = self._identify_important_params(coarse_grid.cv_results_, top_n=2)
                 important_keys = [p.replace('param_', '') for p in important_params]
-                fine_params = auto_generate_fine_grid(best_params, scale=auto_scale, steps=auto_steps, keys=important_keys,
-                                                      coarse_param_grid=self.model_dict[name]['coarse_params'])
+                # Only keep numeric keys
+                numeric_keys = [k for k in important_keys if isinstance(best_params[k], (int, float))]
+                fine_params = auto_generate_fine_grid(
+                    best_params, scale=auto_scale, steps=auto_steps, keys=numeric_keys,
+                    coarse_param_grid=self.model_dict[name]['coarse_params']
+                )
             elif search_mode == 'expert':
-                expert_keys = [k for k in best_params.keys() if 'learning_rate' in k or 'max_depth' in k]
-                fine_params = auto_generate_fine_grid(best_params, scale=auto_scale, steps=auto_steps, keys=expert_keys,
-                                                      coarse_param_grid=self.model_dict[name]['coarse_params'])
+                expert_keys = [k for k in best_params.keys() if ('learning_rate' in k or 'max_depth' in k)
+                               and isinstance(best_params[k], (int, float))]
+                fine_params = auto_generate_fine_grid(
+                    best_params, scale=auto_scale, steps=auto_steps, keys=expert_keys,
+                    coarse_param_grid=self.model_dict[name]['coarse_params']
+                )
             elif search_mode == 'custom' and custom_fine_params:
-                fine_params = custom_fine_params
+                    pipeline_params = self.model_dict[name]['pipeline'].get_params()
+                    fine_params = {
+                        k: v for k, v in custom_fine_params.items()
+                        if k in pipeline_params
+                    }
             else:
-                fine_params = auto_generate_fine_grid(best_params, scale=auto_scale, steps=auto_steps,
-                                                      coarse_param_grid=self.model_dict[name]['coarse_params'])
+                all_numeric_keys = [k for k in best_params.keys() if isinstance(best_params[k], (int, float))]
+                fine_params = auto_generate_fine_grid(
+                    best_params, scale=auto_scale, steps=auto_steps, keys=all_numeric_keys,
+                    coarse_param_grid=self.model_dict[name]['coarse_params']
+                )
 
             total_combinations = 1
             for values in fine_params.values():
@@ -277,28 +299,35 @@ class GridMaster:
 
             last_best = coarse_grid.best_params_
             for i, (scale, steps) in enumerate(stages):
-                stage_name = f'stage{i + 1}'
+                stage_name = f'stage{i+1}'
                 if self.verbose:
-                    print(f"🔧 [STAGE {i + 1} FINE SEARCHING] for: {name} | Scale: {scale} | Steps: {steps}")
+                    print(f"🔧 [STAGE {i+1} FINE SEARCHING] for: {name} | Scale: {scale} | Steps: {steps}")
 
                 if search_mode == 'smart':
                     important_params = self._identify_important_params(coarse_grid.cv_results_, top_n=2)
                     important_keys = [p.replace('param_', '') for p in important_params]
+                    numeric_keys = [k for k in important_keys if k in last_best and isinstance(last_best[k], (int, float))]
                     fine_params = auto_generate_fine_grid(
-                        last_best, scale=scale, steps=steps, keys=important_keys,
+                        last_best, scale=scale, steps=steps, keys=numeric_keys,
                         coarse_param_grid=self.model_dict[name]['coarse_params']
                     )
                 elif search_mode == 'expert':
-                    expert_keys = [k for k in last_best.keys() if 'learning_rate' in k or 'max_depth' in k]
+                    expert_keys = [k for k in last_best.keys() if ('learning_rate' in k or 'max_depth' in k)
+                                   and isinstance(last_best[k], (int, float))]
                     fine_params = auto_generate_fine_grid(
                         last_best, scale=scale, steps=steps, keys=expert_keys,
                         coarse_param_grid=self.model_dict[name]['coarse_params']
                     )
                 elif search_mode == 'custom' and custom_fine_params:
-                    fine_params = custom_fine_params
+                        pipeline_params = self.model_dict[name]['pipeline'].get_params()
+                        fine_params = {
+                            k: v for k, v in custom_fine_params.items()
+                            if k in pipeline_params
+                        }
                 else:
+                    all_numeric_keys = [k for k in last_best.keys() if isinstance(last_best[k], (int, float))]
                     fine_params = auto_generate_fine_grid(
-                        last_best, scale=scale, steps=steps,
+                        last_best, scale=scale, steps=steps, keys=all_numeric_keys,
                         coarse_param_grid=self.model_dict[name]['coarse_params']
                     )
 
@@ -357,13 +386,42 @@ class GridMaster:
         Returns:
         None: Updates `results` with 'test_scores' and 'best_model' for each model.
         """
-        metric_fn = {'accuracy': accuracy_score, 'f1': f1_score, 'roc_auc': roc_auc_score}
+        metric_fn = {
+            'accuracy': accuracy_score,
+            'f1': f1_score,
+            'roc_auc': roc_auc_score,
+            'precision': precision_score,
+            'recall': recall_score
+        }
         comparison_table = []
+
         for name, result in self.results.items():
-            best_model = result.get('final', result.get('fine', result.get('coarse')))
+            result_dict = self.results.get(name, {})
+            best_model = (
+                result_dict.get('final') or
+                result_dict.get('fine') or
+                result_dict.get('coarse')
+            )
+            if best_model is None:
+                continue
+
             y_pred = best_model.predict(X_test)
-            y_prob = best_model.predict_proba(X_test)[:, 1] if hasattr(best_model, "predict_proba") else None
-            scores = {m: round(metric_fn[m](y_test, y_prob if m == 'roc_auc' and y_prob is not None else y_pred), 4) for m in metrics}
+            y_prob = best_model.predict_proba(X_test) if hasattr(best_model, "predict_proba") else None
+            n_classes = len(np.unique(y_test))
+
+            scores = {}
+            for m in metrics:
+                if m == 'roc_auc':
+                    if y_prob is None:
+                        raise ValueError(f"Model '{name}' does not support predict_proba required for roc_auc.")
+                    if n_classes == 2:
+                        roc_auc = roc_auc_score(y_test, y_prob[:, 1])
+                    else:
+                        roc_auc = roc_auc_score(y_test, y_prob, multi_class='ovr')
+                    scores[m] = round(roc_auc, 4)
+                else:
+                    scores[m] = round(metric_fn[m](y_test, y_pred), 4)
+
             self.results[name]['test_scores'] = scores
             self.results[name]['best_model'] = best_model
             comparison_table.append((name, scores))
@@ -405,8 +463,14 @@ class GridMaster:
                 - 'test_scores' (dict): Optional test metrics if available.
         """
         name = model_name or self.best_model_name
+        if not name or name not in self.results:
+            raise ValueError("No best model has been set or found.")
+
         result = self.results[name]
-        best_obj = result.get('final', result.get('fine', result.get('coarse')))
+        best_obj = result.get('final') or result.get('fine') or result.get('coarse')
+        if not best_obj:
+            raise ValueError(f"No completed search found for model '{name}'.")
+
         return {
             'model_name': name,
             'best_estimator': best_obj.best_estimator_,
@@ -467,7 +531,10 @@ class GridMaster:
         results = grid_obj.cv_results_
         scores = results.get(metric)
         train_scores = results.get('mean_train_score') if plot_train else None
-        best_idx = grid_obj.best_index_
+        best_idx = getattr(grid_obj, 'best_index_', None)
+        if best_idx is not None:
+            plt.axvline(best_idx, color='red', linestyle='--', label='Best Model')
+            plt.scatter(best_idx, scores[best_idx], color='red', s=80, zorder=5)
 
         plt.figure(figsize=figsize)
         plt.plot(range(len(scores)), scores, marker='o', label='Validation')
@@ -536,10 +603,15 @@ class GridMaster:
         """
         from .plot_utils import set_plot_style
         set_plot_style()
-        best_model = self.results[model_name].get(
-            'final',
-            self.results[model_name].get('fine', self.results[model_name].get('coarse'))
+        result_dict = self.results.get(model_name, {})
+        best_model = (
+            result_dict.get('final') or
+            result_dict.get('fine') or
+            result_dict.get('coarse')
         )
+
+        if best_model is None:
+            raise ValueError(f"No search results found for model '{model_name}'")
         y_pred = best_model.predict(X_test)
         cm = confusion_matrix(y_test, y_pred, labels=labels, normalize=normalize)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
@@ -552,6 +624,28 @@ class GridMaster:
         if save_path:
             plt.savefig(save_path)
         plt.show()
+
+    def _extract_feature_scores(self, clf):
+        """
+        Private helper to extract feature importance or coefficients from a model.
+
+        Args:
+            clf: A fitted estimator (usually from named_steps['clf']).
+
+        Returns:
+            tuple: (scores, type)
+                - scores: np.ndarray of scores.
+                - type: 'importance' or 'coefficient'.
+        """
+        if hasattr(clf, 'feature_importances_'):
+            return clf.feature_importances_, 'importance'
+        elif hasattr(clf, 'coef_'):
+            coef = clf.coef_
+            if coef.ndim > 1:
+                coef = coef.flatten()
+            return coef, 'coefficient'
+        else:
+            raise AttributeError("The provided model does not support feature_importances_ or coef_.")
 
     def plot_model_coefficients(
         self,
@@ -583,16 +677,25 @@ class GridMaster:
         """
         from .plot_utils import set_plot_style
         set_plot_style()
-        best_model = self.results[model_name].get(
-            'final',
-            self.results[model_name].get('fine', self.results[model_name].get('coarse'))
+        result_dict = self.results.get(model_name, {})
+        best_model = (
+            result_dict.get('final') or
+            result_dict.get('fine') or
+            result_dict.get('coarse')
         )
-        coef = best_model.best_estimator_.named_steps['clf'].coef_.flatten()
-        feature_names = self.feature_names[:len(coef)]
+
+        if best_model is None:
+            raise ValueError(f"No search results found for model '{model_name}'")
+        clf = best_model.best_estimator_.named_steps['clf']
+        scores, score_type = self._extract_feature_scores(clf)
+        if score_type != 'coefficient':
+            raise AttributeError(f"Model '{model_name}' does not provide coefficients for plotting.")
+
+        feature_names = self.feature_names[:len(scores)]
         df = pd.DataFrame({
             'Feature': feature_names,
-            'Coefficient': coef,
-            'AbsValue': np.abs(coef)
+            'Coefficient': scores,
+            'AbsValue': np.abs(scores)
         })
         df = df.sort_values(by='AbsValue', ascending=not sort_descending).head(top_n)
 
@@ -637,16 +740,26 @@ class GridMaster:
         """
         from .plot_utils import set_plot_style
         set_plot_style()  # Automatically applies once
-
-        best_model = self.results[model_name].get(
-            'final',
-            self.results[model_name].get('fine', self.results[model_name].get('coarse'))
+        result_dict = self.results.get(model_name, {})
+        best_model = (
+            result_dict.get('final') or
+            result_dict.get('fine') or
+            result_dict.get('coarse')
         )
-        importances = best_model.best_estimator_.named_steps['clf'].feature_importances_
-        feature_names = self.feature_names[:len(importances)]
 
-        df = pd.DataFrame({'Feature': feature_names, 'Importance': importances})
+        if best_model is None:
+            raise ValueError(f"No search results found for model '{model_name}'")
+
+        clf = best_model.best_estimator_.named_steps['clf']
+        scores, score_type = self._extract_feature_scores(clf)
+        if score_type != 'importance':
+            raise AttributeError(f"Model '{model_name}' does not provide feature importances for plotting.")
+
+        feature_names = self.feature_names[:len(scores)]
+        df = pd.DataFrame({'Feature': feature_names, 'Importance': scores})
         df = df.sort_values(by='Importance', ascending=not sort_descending).head(top_n)
+
+
 
         plt.figure(figsize=figsize)
         plt.barh(df['Feature'], df['Importance'], color=color)
@@ -782,16 +895,48 @@ class GridMaster:
         Returns:
             None
         """
-        model_folder = os.path.join(folder_path, model_name)
-        os.makedirs(model_folder, exist_ok=True)
-        best_model = self.results[model_name].get('final', self.results[model_name].get('fine', self.results[model_name]['coarse']))
-        joblib.dump(best_model.best_estimator_, os.path.join(model_folder, 'model_final.joblib'))
-        summary = self.get_best_model_summary(model_name)
-        with open(os.path.join(model_folder, 'best_model_summary.json'), 'w') as f:
-            json.dump(summary, f, indent=4, default=str)
-        for stage_name, grid_obj in self.results[model_name].items():
-            if hasattr(grid_obj, 'cv_results_'):
-                pd.DataFrame(grid_obj.cv_results_).to_csv(os.path.join(model_folder, f'cv_results_{stage_name}.csv'), index=False)
+        import_path = os.path.join(folder_path, model_name)
+        model_file = os.path.join(import_path, 'model_final.joblib')
+        summary_file = os.path.join(import_path, 'best_model_summary.json')
+
+        # Load best estimator
+        estimator = joblib.load(model_file)
+
+        # Load summary
+        with open(summary_file, 'r') as f:
+            summary = json.load(f)
+
+        # Load CV results
+        cv_results = {}
+        for file in os.listdir(import_path):
+            if file.startswith('cv_results_') and file.endswith('.csv'):
+                stage_name = file.replace('cv_results_', '').replace('.csv', '')
+                cv_results[stage_name] = pd.read_csv(os.path.join(import_path, file))
+
+        # Wrap estimator in a dummy object to mimic GridSearchCV (optional but useful for compatibility)
+        class DummyGridSearch:
+            def __init__(self, best_estimator):
+                self.best_estimator_ = best_estimator
+                self.cv_results_ = {}  # Empty, since we don't reload full cv object
+                self.best_params_ = summary.get('best_params', {})
+                self.best_score_ = summary.get('cv_best_score', None)
+                self.scoring = None  # You could also pull this from summary if stored
+
+            def predict(self, X):
+                return self.best_estimator_.predict(X)
+
+            def predict_proba(self, X):
+                return self.best_estimator_.predict_proba(X)
+
+        dummy_grid = DummyGridSearch(estimator)
+
+        self.results[model_name] = {
+            'best_model': dummy_grid,
+            'summary': summary,
+            'cv_results_loaded': cv_results
+        }
+
+        self.best_model_name = model_name
 
     def export_all_models(self, folder_path='model_exports', use_timestamp=True):
         """
@@ -818,21 +963,17 @@ class GridMaster:
             except Exception as e:
                 print(f"[⚠️ Skipped] {model_name}: {e}")
 
-    def load_model_package(self, model_name, folder_path='model_exports'):
+    def load_model_package(self, folder_subdir_path):
         """
         Load a saved model package from disk, including the estimator, summary, and CV results.
 
-        This function reads the saved model (.joblib), summary (.json), and cross-validation result files (.csv) from the given folder, and stores them in `self.results`.
-
-
         Args:
-            model_name (str): Name of the model to load.
-            folder_path (str, optional): Base path where model files are stored. Defaults to 'model_exports'.
+            folder_subdir_path (str): Full path to the saved model subfolder.
 
         Returns:
-            None: Updates `self.results` and sets `self.best_model_name`.
+            None
         """
-        import_path = os.path.join(folder_path, model_name)
+        import_path = folder_subdir_path
         model_file = os.path.join(import_path, 'model_final.joblib')
         summary_file = os.path.join(import_path, 'best_model_summary.json')
         estimator = joblib.load(model_file)
@@ -843,6 +984,7 @@ class GridMaster:
             if file.startswith('cv_results_') and file.endswith('.csv'):
                 stage_name = file.replace('cv_results_', '').replace('.csv', '')
                 cv_results[stage_name] = pd.read_csv(os.path.join(import_path, file))
+        model_name = summary.get('model_name')  # or infer from folder if needed
         self.results[model_name] = {
             'loaded_model': estimator,
             'summary': summary,
@@ -856,7 +998,7 @@ class GridMaster:
 
         This function iterates through all subdirectories in `folder_path`, assumes each contains a model export (via `export_model_package()`), and calls
         `load_model_package()` to load them into `self.results`.
-        Model names are inferred from subdirectory names (before first underscore if timestamped).
+        Model names are inferred from the summary file inside.
 
         Args:
             folder_path (str, optional): Directory containing exported model subfolders. Defaults to 'model_exports'.
@@ -864,10 +1006,14 @@ class GridMaster:
         Returns:
             None: Updates `self.results` with loaded model data.
         """
+        if not os.path.exists(folder_path):
+            print(f"⚠️ Folder '{folder_path}' does not exist. Skipping import.")
+            return
+
         subdirs = [d for d in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, d))]
-        for sub in subdirs:
-            model_name = sub.split('_')[0]
+        for subdir in subdirs:
+            subdir_path = os.path.join(folder_path, subdir)
             try:
-                self.load_model_package(model_name, folder_path=folder_path)
+                self.load_model_package(folder_subdir_path=subdir_path)
             except Exception as e:
-                print(f"[⚠️ Skipped] {sub}: {e}")
+                print(f"[⚠️ Skipped] {subdir}: {e}")

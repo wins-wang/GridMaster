@@ -135,6 +135,22 @@ of the hyperparameter space without redundant or invalid values.
 
 ---
 
+⚠️ **Important:**  
+
+This function **only** refines numeric hyperparameters.
+
+Categorical parameters — such as:
+
+\- `'clf__penalty': ['l1', 'l2']` (Logistic Regression)
+
+\- `'clf__booster': ['gbtree', 'dart']` (XGBoost)
+
+are **not** included in fine grids  and remain fixed at their best coarse value during fine-tuning.
+
+If you want to adjust these,  you must explicitly pass a `custom_fine_params` dictionary to override.
+
+---
+
 #### **Example**
 
 ```python
@@ -168,6 +184,7 @@ for supported models such as `'logistic'`, `'random_forest'`, `'xgboost'`, `'lig
 #### **Returns**
 
 `dict`: A configuration dictionary containing:
+
 - `'pipeline'`: A scikit-learn `Pipeline` object combining preprocessing and the model.
 - `'param_grid'`: A coarse hyperparameter grid for initial search.
 
@@ -175,9 +192,16 @@ for supported models such as `'logistic'`, `'random_forest'`, `'xgboost'`, `'lig
 
 #### **Notes**
 
+✨ **New in v0.5.x:**  
+
+You can now pass a **`mode`** argument to select between:
+
+\- `'fast'` → Lightweight, quick coarse search for experiments.
+
+\- `'industrial'` → Comprehensive, production-grade coarse search.
+
 ⚠️ **This is intended for advanced users or developers**  
-who want to access and possibly customize the model configurations  
-before passing them into the search functions.
+who want to access and possibly customize the model configurations before passing them into the search functions.
 
 ---
 
@@ -192,6 +216,25 @@ print(config['param_grid'])
 ---
 
 ---
+### 🔍 **Fine-Tuning vs. Coarse Mode Clarification**
+
+| Setting       | Where to Set                     | Controls                                                     |
+| ------------- | -------------------------------- | ------------------------------------------------------------ |
+| `mode`        | GridMaster initialization        | Size and complexity of the **coarse search grid** (`fast` vs. `industrial`). |
+| `search_mode` | fine_search / multi_stage_search | Strategy used in **fine-tuning** (`smart`, `expert`, or `custom`) after coarse search. |
+
+These settings work **independently** and can be combined to fine-tune both  
+the **breadth** (coarse grid) and **depth** (fine search) of your hyperparameter search.
+
+---
+
+This distinction helps users understand which parameter impacts which phase,  
+avoiding confusion when configuring multi-stage pipelines.
+
+---
+
+---
+
 ### Advanced Utility **`.set_plot_style()`**
 
 Apply a consistent global plotting style across all GridMaster visualizations.
@@ -249,3 +292,45 @@ from gridmaster.plot_utils import set_plot_style
 # Set a larger base font size for all following plots
 set_plot_style(base_fontsize=16)
 ```
+
+---
+
+---
+
+### **Advanced Example Combining Both Modes**
+
+This example shows how to combine:
+
+✅ Coarse search mode selection (`mode='industrial'`)  
+
+✅ Fine search strategy selection (`search_mode='smart'`)
+
+```python
+gm = GridMaster(
+
+  models=['xgboost'],
+
+  X_train=X_train,
+
+  y_train=y_train,
+
+  mode='industrial', # controls coarse grid size
+
+  custom_estimator_params={'xgboost': {'tree_method': 'gpu_hist'}}
+
+)
+
+
+
+gm.multi_stage_search(
+
+  search_mode='smart' # controls fine-tuning strategy
+
+)
+```
+
+
+---
+
+
+

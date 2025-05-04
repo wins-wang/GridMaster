@@ -11,7 +11,7 @@ __pycache__/
 # Jupyter
 .ipynb_checkpoints/
 
-# Mac
+# Mac system files
 .DS_Store
 
 # Build artifacts
@@ -25,3 +25,7 @@ docs/build/
 
 # catboost
 catboost_info/
+
+# Model export or test result folders (if generated)
+model_exports/
+test_exports/

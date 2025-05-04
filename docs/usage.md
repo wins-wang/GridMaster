@@ -16,8 +16,13 @@ This guide will help you:
 ## 1. Installation
 
 ```bash
-pip install gridmaster
+pip install --upgrade gridmaster
 ```
+
+> ⚠️ Make sure your Python version is >= 3.8,  
+> and that you have compatible versions of `scikit-learn`, `xgboost`, `lightgbm`, and `catboost` installed.
+>
+>  ⚠️ I recommend **always installing the latest version** to benefit from new features, bug fixes, and improvements.
 
 ---
 
@@ -47,7 +52,7 @@ By default, you can run:
 from gridmaster import GridMaster
 
 # Initialize with at least one model
-gm = GridMaster(models=['logistic', 'random_forest'])
+gm = GridMaster(models=['logistic', 'random_forest'], X_train, y_train)
 
 gm.coarse_search()
 gm.fine_search()
@@ -61,7 +66,9 @@ This will:
 
 > *By default, GridMaster balances system load and speed by using **half of available CPU** cores for parallel search; advanced users can adjust this with the* `n_jobs` *parameter (see* [*Advanced Settings*](/en/main/api/advanced_api/#advanced-setting-cpu-parallelism-n_jobs)*).*
 >
-> *By default, `fine_search` uses **smart mode**, automatically refining the top 2 impactful parameters based on coarse search performance variation. See [Modes](api/core_api.md#method-fine_search) for details.*
+> _By default, `GridMaster()` initialization uses **fast mode**, applying a **small, quick grid** of hyperparameters designed for rapid exploration or lightweight machines. For professional or production use, you can pass `mode='industrial'` to start with a larger industrial-grade coarse grid. Please check [`__init__()`](/en/main/api/core_api/#method-init) and [Tech Spaces](/en/main/api/parameters/#default-coarse-search-parameter-grids-by-mode) for details._
+>
+> *By default, `fine_search` and `multi_stage_search` uses **smart mode**, automatically refining the top 2 impactful parameters based on coarse search performance variation. See [Modes](api/core_api.md#method-fine_search) for details.*
 >
 > *Advanced users can also pass custom **GPU-related estimator parameters** (e.g., `tree_method='gpu_hist'` for XGBoost) through the* `custom_estimator_params` *argument (see* [*Advanced Settings*](/en/main/api/advanced_api/#advanced-setting-custom-estimator-parameters-custom_estimator_params)).
 
@@ -76,7 +83,8 @@ gm.multi_stage_search(
     model_name='logistic',
     cv=5,
     scoring='accuracy',
-    stages=[(0.5, 5), (0.2, 5)]
+    stages=[(0.5, 5), (0.2, 5)],
+    search_mode='smart'  # default is 'smart'
 )
 ```
 
@@ -183,6 +191,7 @@ For details, see [Essential Tools](api/core_api.md).
 - Explore [Essential Tools](api/core_api.md)  
 - Dive into [Advanced Utilities](api/advanced_api.md)  
 - Check out [example notebooks](https://github.com/wins-wang/GridMaster/blob/main/demo_usage.ipynb)
+- Found a bug or have a feature request?  Please open an issue at [GitHub Issues](https://github.com/wins-wang/GridMaster/issues).
 
 ---
 

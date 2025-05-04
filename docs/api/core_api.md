@@ -21,6 +21,7 @@ This constructor sets up the internal model configuration for each model using t
 | `models`        | list                   | A list of model names (e.g., `'logistic'`, `'random_forest'`, `'xgboost'`).                                                                      | –       |
 | `X_train`       | array-like or DataFrame | Training features.                                                                                                                               | –       |
 | `y_train`       | array-like             | Training labels.                                                                                                                                 | –       |
+| `mode` | str, optional | One of` 'fast'` or `'industrial'`. Controls the scale of the coarse search grids for each model. `'fast'` is quicker but less exhaustive; `'industrial'` is larger and better suited for production-grade tuning. | `'fast'` |
 | `custom_params` | dict, optional         | Dictionary of custom coarse-level hyperparameters for specific models. Format: `{model_name: param_dict}`.                     | `None`  |
 | `custom_estimator_params` | dict, optional | Dictionary of custom estimator (model) initialization parameters. Format: `{model_name: param_dict}` Useful for enabling options like GPU. | `None` |
 | `njobs` | int, optional | Number of parallel jobs for GridSearchCV. Defaults to **half of the total detected CPU cores** (based on system hardware). Use -1 to utilize all CPU cores. | **half of total CPU cores** |
@@ -646,6 +647,9 @@ gm.plot_feature_importance('xgboost', top_n=15, color='orange')
 
 ---
 ## **Import & Export**
+
+>  ⚠️ **Warning:** When loading models across environments or machines, ensure that the software dependencies (e.g., sklearn, xgboost versions) are consistent. Mismatched library versions may lead to loading errors or unpredictable behavior.
+
 ---
 
 ### Method **`.export_model_package()`**

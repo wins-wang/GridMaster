@@ -1,10 +1,57 @@
 # 📘 GridMaster Version History
 
 ---
+## v0.5.1 – 2025-05-04
+
+### 🚀 New Features
+- **Robust model export & import system**
+  - Enhanced `export_all_models()`:
+    - Added `use_timestamp` flag to avoid overwriting export folders.
+    - Creates separate timestamped subfolders per model.
+    - Wraps each model export in try-except to avoid breaking full export on single failure.
+  - Enhanced `import_all_models()`:
+    - Automatically detects whether subfolder names include timestamps and restores original model names.
+    - Gracefully handles missing directories, providing clear warnings.
+    - Skips individual models with issues without interrupting the full import process.
+
+### Bug Fixes
+- Fixed `fine_search()` `NoneType` error when `custom_fine_params` is not provided.
+- Corrected multi-stage search numeric key detection to skip non-numeric (e.g., string) parameters.
+- Added missing metric imports (`precision_score`, `recall_score`, etc.) to prevent `compare_best_models` crashes.
+- Fixed incorrect path handling in `import_all_models()` when model files were not found.
+
+### Other Improvements
+- Improved internal parameter checks to avoid passing unsupported parameters (e.g., `max_depth` to `LogisticRegression`).
+
+## v0.5.0 - 2025-05-04
+✨ New Features
+	•	Smart Mode Selection
+	•	Introduced mode='fast' (default) and mode='industrial' options in build_model_config() and GridMaster.
+	•	Automatically adjusts hyperparameter grids for different application scenarios.
+	•	Fast Mode: Lightweight, minimal combinations, focused on core parameters (for fast prototyping, teaching, small experiments).
+	•	Industrial Mode: Extended grid with more parameters, finer control, and better optimization for large-scale or production use.
+	•	Solver Auto-Selector (Logistic Regression)
+	•	Automatically switches to saga solver with elasticnet support for large datasets or industrial mode.
+	•	Keeps liblinear for small datasets and fast mode to ensure compatibility and speed.
+
+
+🛠 Improvements
+	•	Coarse search parameter grids updated:
+	•	XGBoost, LightGBM, CatBoost: Added or expanded important hyperparameters (subsample, num_leaves, l2_leaf_reg) under industrial mode.
+	•	RandomForest: Adjusted n_estimators and max_depth ranges for better scaling.
+	•	Cleaner separation between fast and industrial mode configurations.
+	•	Enhanced consistency across models, aligning design choices to real-world use cases.
+
+
+🐛 Fixes
+	•	Prevented fine search errors on non-numeric parameters (e.g., clf__penalty) by skipping them in automatic fine grid generation.
+	•	Improved stability when working with limited coarse grids or narrow parameter ranges.
+
+
 ## v0.3.3 - 2025-05-04
 🛠 Fixed multi_stage_search() setting
 
-## v0.3.2 - 2025-05-04
+## v0.3.2 - 2025-05-03
 ✨ Updates
 	•	[multi_stage_search]
 	•	Updated multi_stage_search() to default to searching all initialized models when no model_name is specified.

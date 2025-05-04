@@ -20,19 +20,25 @@ With just a few lines, GridMaster helps you:
 
 ---
 
->  ⚙️ ***New* in v 0.3.x**  
+>  ⚙️ ***New* in v0.5.x**
 >
-> **Smart, Expert, and Custom fine-tuning modes:**  
+>  - Smart `mode` selector: Switch between `'fast'` (default) for lightweight search, or `'industrial'` for expanded grids and deeper optimization.
+>  - Solver auto-selection for Logistic Regression: Automatically picks `'liblinear'` or `'saga'` depending on dataset size and mode, enabling elasticnet where applicable.
+>  - Expanded coarse grids under `'industrial'` mode for XGBoost, LightGBM, CatBoost, Random Forest.
 >
-> - **Smart**: Automatically selects top 2 impactful hyperparameters based on variation analysis.
+>  ⚙️ ***New* in v0.3.x**  
 >
-> - **Expert**: Focuses on commonly sensitive parameters like `learning_rate` and `max_depth`.
+>  **Smart, Expert, and Custom fine-tuning modes:**  
 >
-> - **Custom**: User-defined fine grids.
+>  - **Smart**: Automatically selects top 2 impactful hyperparameters based on variation analysis.
 >
-> **Parallel CPU support:** Automatically detects available CPU cores and assigns half for faster parallel search (`n_jobs`), balancing speed and system performance. You can override this manually if needed.
+>  - **Expert**: Focuses on commonly sensitive parameters like `learning_rate` and `max_depth`.
 >
-> **Enable GPU Acceleration**: Directly pass GPU-specific flags (like tree_method='gpu_hist') to **XGBoost**, **LightGBM**, and **CatBoost** via `custom_estimator_params`.
+>  - **Custom**: User-defined fine grids.
+>
+>  **Parallel CPU support:** Automatically detects available CPU cores and assigns half for faster parallel search (`n_jobs`), balancing speed and system performance. You can override this manually if needed.
+>
+>  **Enable GPU Acceleration**: Directly pass GPU-specific flags (like tree_method='gpu_hist') to **XGBoost**, **LightGBM**, and **CatBoost** via `custom_estimator_params`.
 
 ---
 
@@ -46,7 +52,7 @@ GridMaster currently supports **classification models** only:
 ✅ LightGBM  
 ✅ CatBoost  
 
-> ⚠️ **Note**: Decision Trees are not included, as they are rarely used in industrial hyperparameter optimization workflows.
+> ⚠️ **Note**: Decision Trees are  currently excluded, as they are rarely used in industrial hyperparameter optimization workflows.
 
 > 🏗️ **GridMaster** is built on top of `scikit-learn` and integrates seamlessly with popular libraries like `XGBoost`, `LightGBM`, and `CatBoost`, providing a familiar interface for model tuning and evaluation.
 
@@ -56,14 +62,26 @@ GridMaster currently supports **classification models** only:
 
 1. **Coarse Search**  
     Starts with broad, commonly recommended parameter grids for each classifier (e.g., C, max_depth, learning_rate), providing a robust initial exploration of the search space.
+
+    > **Mode Selection:**  
+    >
+    >   _GridMaster now supports two modes:_
+    >
+    >   \- `'fast'`: Focused, minimal grids for fast iteration.
+    >
+    >   \- `'industrial'`: Wide grids with additional hyperparameters, better suited for production-scale optimization.
+
 2. **Fine Search**  
     Automatically refines parameter ranges around the best coarse result:  
     For **linear-scale parameters**, narrows range by ±X% (default ±50%)  
     For **log-scale parameters** (like C, learning_rate), adjusts intelligently on the log scale ensuring meaningful search coverage without wasting runs.
+
 3. **Multi-Stage Search**  
     Allows multiple fine-tuning rounds with custom precision, eliminating the need to manually loop grid searches for each model.
-4. **By default, both Fine Search and Multi-Stage Search focus on the top 2 most impactful parameters (based on performance variation observed during the coarse search stage) for refinement.**
-5. **Multi-Model Comparison**  
+
+    > **By default, both Fine Search and Multi-Stage Search focus on the top 2 most impactful parameters (based on performance variation observed during the coarse search stage) for refinement.**
+
+4. **Multi-Model Comparison**  
     Trains and tunes all supported models in parallel, automatically identifies the top performer, and outputs detailed metrics and plots for interpretation.
 
 ---
