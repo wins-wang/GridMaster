@@ -25,6 +25,3 @@ docs/build/
 
 # catboost
 catboost_info/
-
-# for accurate program lang showing 
-*.ipynb linguist-vendored
