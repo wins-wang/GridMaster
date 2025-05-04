@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='gridmaster',
-    version='0.3.1',
+    version='0.3.2',
     description='A lightweight multi-stage grid search AutoML framework for classifiers. GridMaster v0.2.0: Log-scale search + plot customization features',
     author='Winston Wang',
     author_email='mail@winston-wang.com',

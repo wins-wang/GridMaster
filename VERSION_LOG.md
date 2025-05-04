@@ -1,6 +1,17 @@
 # 📘 GridMaster Version History
 
 ---
+## v0.3.2 - 2025-05-04
+✨ Updates
+	•	[multi_stage_search]
+	•	Updated multi_stage_search() to default to searching all initialized models when no model_name is specified.
+		Users can still explicitly pass a subset of model names if they want to tune only specific models.
+	•	[Documentation Improvements]
+	•	Added a prerequisite warning in the fine_search() section to clarify that it requires prior execution of coarse_search().
+	•	Enhanced the Quick Start guide to highlight the difference in scope:
+	•	coarse_search() and fine_search() always run across all initialized models.
+	•	multi_stage_search() allows targeting specific models or defaulting to all.
+
 ## v0.3.1 – 2025-05-02 Bugfixes & Usability Enhancements
 	•	Fixed stage naming in reports (removed raw stage1 suffix).
 	•	Improved fallback when fine grids are too narrow or degenerate.

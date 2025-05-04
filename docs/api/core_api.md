@@ -107,6 +107,9 @@ gm.coarse_search(scoring='f1', cv=5)
 ---
 ### Method **`.fine_search()`**
 
+❗**Prerequisite:**  
+_Before using `.fine_search()`, you **must first run** `.coarse_search()` to generate the required coarse search results._
+
 Performs fine-level hyperparameter tuning based on coarse search results.
 
 This method refines the hyperparameter grid by auto-generating a narrower search space around the best parameters from the coarse search and runs another GridSearchCV.  
@@ -188,6 +191,10 @@ This method internally uses the following advanced GridSearchCV parameters, set 
 #### **Example**
 
 ```python
+# Step 1: Run coarse search first
+gm.coarse_search(scoring='accuracy', cv=5)
+
+# Step 2: Fine-tune using smart mode
 gm.fine_search(
     scoring='roc_auc',
     cv=5,
@@ -233,7 +240,7 @@ You can now choose **smart**, **expert**, or **custom** mode for each fine stage
 
 | Parameter            | Type                    | Description                                                  | Default                |
 | -------------------- | ----------------------- | ------------------------------------------------------------ | ---------------------- |
-| `model_name`         | str                     | Name of the model to search (must be present in `model_dict`). | —                      |
+| `model_name`         | str                     | Name of the model to search (must be present in `model_dict`). Defaults to  to None, which means use all models from initialization. | `None`                 |
 | `cv`                 | int, optional           | Number of cross-validation folds.                            | 5                      |
 | `scoring`            | str, optional           | Scoring metric to optimize. Must be one of `'accuracy'`, `'f1'`, `'roc_auc'`, `'precision'`, `'recall'`, or any valid sklearn scorer string. | `'accuracy'`           |
 | `stages`             | list of tuple, optional | List of `(scale, steps)` for each fine-tuning stage. Example: `[(0.5, 5), (0.2, 5)]` means two rounds: ±50% grid with 5 points, then ±20% with 5 points. | `[(0.5, 5), (0.2, 5)]` |

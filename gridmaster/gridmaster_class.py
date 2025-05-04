@@ -210,7 +210,7 @@ class GridMaster:
             self.results[name]['fine'] = grid
             self.results[name]['best_model'] = grid
 
-    def multi_stage_search(self, model_name, cv=5, scoring='accuracy', stages=[(0.5, 5), (0.2, 5)],search_mode='smart', custom_fine_params=None):
+    def multi_stage_search(self, model_name=None, cv=5, scoring='accuracy', stages=[(0.5, 5), (0.2, 5)],search_mode='smart', custom_fine_params=None):
         """
         Perform a multi-stage grid search consisting of one coarse and multiple fine-tuning stages.
 
@@ -218,6 +218,7 @@ class GridMaster:
 
         Args:
             model_name (str): Name of the model to search (must be present in `model_dict`).
+                Defaults to None, which means use all models from initialization.
             cv (int, optional): Number of cross-validation folds. Defaults to 5.
             scoring (str, optional): Scoring metric to optimize.
                 Must be one of:
@@ -247,73 +248,79 @@ class GridMaster:
         Returns:
         None: Updates the `results` dictionary with intermediate GridSearchCV results for each stage.
         """
-        if model_name not in self.model_dict:
-            raise ValueError(f"Model '{model_name}' not found.")
-        if 'coarse' not in self.results.get(model_name, {}):
-            if self.verbose:
-                print(f"🔍 [COARSE SEARCHING] for: {model_name}")
-            coarse_grid = GridSearchCV(
-                self.model_dict[model_name]['pipeline'],
-                self.model_dict[model_name]['coarse_params'],
-                scoring=scoring,
-                cv=cv,
-                n_jobs=self.n_jobs,
-                verbose=self.verbose,
-                refit=self.refit,
-                return_train_score=self.return_train_score
-                )
-            coarse_grid.fit(self.X_train, self.y_train)
-            self.results.setdefault(model_name, {})['coarse'] = coarse_grid
+        if model_name is None:
+            model_names = list(self.model_dict.keys())  # Run all models
         else:
-            coarse_grid = self.results[model_name]['coarse']
+            model_names = [model_name]  # Run single specified model
 
-        last_best = coarse_grid.best_params_
-        for i, (scale, steps) in enumerate(stages):
-                stage_name = f'stage{i+1}'
+        for name in model_names:
+            if model_name not in self.model_dict:
+                raise ValueError(f"Model '{model_name}' not found.")
+            if 'coarse' not in self.results.get(model_name, {}):
                 if self.verbose:
-                    print(f"🔧 [STAGE {i+1} FINE SEARCHING] for: {model_name} | Scale: {scale} | Steps: {steps}")
-
-                if search_mode == 'smart':
-                    important_params = self._identify_important_params(coarse_grid.cv_results_, top_n=2)
-                    important_keys = [p.replace('param_', '') for p in important_params]
-                    fine_params = auto_generate_fine_grid(last_best, scale=scale, steps=steps, keys=important_keys,
-                                                          coarse_param_grid=self.model_dict[model_name]['coarse_params'])
-                elif search_mode == 'expert':
-                    expert_keys = [k for k in last_best.keys() if 'learning_rate' in k or 'max_depth' in k]
-                    fine_params = auto_generate_fine_grid(last_best, scale=scale, steps=steps, keys=expert_keys,
-                                                          coarse_param_grid=self.model_dict[model_name]['coarse_params'])
-                elif search_mode == 'custom' and custom_fine_params:
-                    fine_params = custom_fine_params
-                else:
-                    fine_params = auto_generate_fine_grid(last_best, scale=scale, steps=steps,
-                                                          coarse_param_grid=self.model_dict[model_name]['coarse_params'])
-
-                total_combinations = 1
-                for values in fine_params.values():
-                    total_combinations *= len(values)
-
-                if total_combinations <= 1:
-                    print(f"⚠️ Skipping {stage_name} for {model_name}: only one parameter combination detected.\n"
-                          f"Reason: likely due to narrow coarse grid or constrained keys.\n"
-                          f"Tip: Adjust auto_scale, auto_steps, or provide a richer custom_fine_params.\n")
-                    continue
-
-                fine_grid = GridSearchCV(
+                    print(f"🔍 [COARSE SEARCHING] for: {model_name}")
+                coarse_grid = GridSearchCV(
                     self.model_dict[model_name]['pipeline'],
-                    fine_params,
+                    self.model_dict[model_name]['coarse_params'],
                     scoring=scoring,
                     cv=cv,
                     n_jobs=self.n_jobs,
                     verbose=self.verbose,
                     refit=self.refit,
                     return_train_score=self.return_train_score
-                )
-                fine_grid.fit(self.X_train, self.y_train)
-                self.results[model_name][stage_name] = fine_grid
-                last_best = fine_grid.best_params_
+                    )
+                coarse_grid.fit(self.X_train, self.y_train)
+                self.results.setdefault(model_name, {})['coarse'] = coarse_grid
+            else:
+                coarse_grid = self.results[model_name]['coarse']
 
-        self.results[model_name]['final'] = fine_grid
-        self.results[model_name]['best_model'] = fine_grid
+            last_best = coarse_grid.best_params_
+            for i, (scale, steps) in enumerate(stages):
+                    stage_name = f'stage{i+1}'
+                    if self.verbose:
+                        print(f"🔧 [STAGE {i+1} FINE SEARCHING] for: {model_name} | Scale: {scale} | Steps: {steps}")
+
+                    if search_mode == 'smart':
+                        important_params = self._identify_important_params(coarse_grid.cv_results_, top_n=2)
+                        important_keys = [p.replace('param_', '') for p in important_params]
+                        fine_params = auto_generate_fine_grid(last_best, scale=scale, steps=steps, keys=important_keys,
+                                                              coarse_param_grid=self.model_dict[model_name]['coarse_params'])
+                    elif search_mode == 'expert':
+                        expert_keys = [k for k in last_best.keys() if 'learning_rate' in k or 'max_depth' in k]
+                        fine_params = auto_generate_fine_grid(last_best, scale=scale, steps=steps, keys=expert_keys,
+                                                              coarse_param_grid=self.model_dict[model_name]['coarse_params'])
+                    elif search_mode == 'custom' and custom_fine_params:
+                        fine_params = custom_fine_params
+                    else:
+                        fine_params = auto_generate_fine_grid(last_best, scale=scale, steps=steps,
+                                                              coarse_param_grid=self.model_dict[model_name]['coarse_params'])
+
+                    total_combinations = 1
+                    for values in fine_params.values():
+                        total_combinations *= len(values)
+
+                    if total_combinations <= 1:
+                        print(f"⚠️ Skipping {stage_name} for {model_name}: only one parameter combination detected.\n"
+                              f"Reason: likely due to narrow coarse grid or constrained keys.\n"
+                              f"Tip: Adjust auto_scale, auto_steps, or provide a richer custom_fine_params.\n")
+                        continue
+
+                    fine_grid = GridSearchCV(
+                        self.model_dict[model_name]['pipeline'],
+                        fine_params,
+                        scoring=scoring,
+                        cv=cv,
+                        n_jobs=self.n_jobs,
+                        verbose=self.verbose,
+                        refit=self.refit,
+                        return_train_score=self.return_train_score
+                    )
+                    fine_grid.fit(self.X_train, self.y_train)
+                    self.results[model_name][stage_name] = fine_grid
+                    last_best = fine_grid.best_params_
+
+            self.results[model_name]['final'] = fine_grid
+            self.results[model_name]['best_model'] = fine_grid
 
     def compare_best_models(self, X_test, y_test, metrics=['accuracy', 'f1', 'roc_auc'], strategy='rank_sum', weights=None):
         """

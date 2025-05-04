@@ -116,6 +116,9 @@ However, if you want to perform multi-stage fine-tuning (i.e., multiple refineme
 
 Alternatively, if you prefer manual control, you can run `coarse_search()` and `fine_search()` separately, allowing you to adjust parameters, scoring metrics, or grids between steps.
 
+⚠️ **Note:**  
+Unlike `coarse_search()` and `fine_search()`, which always operate on **all initialized models** by default,  `multi_stage_search()` allows you to optionally specify a subset of models to tune by passing the `model_name` argument.  If no `model_name` is provided, it will also run on all models.
+
 
 ---
 
