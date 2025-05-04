@@ -6,7 +6,10 @@
 .md-content__inner {
     padding-top: 0px;
 }
-
+/* 手机端侧边栏顶部颜色 */
+.md-drawer__header {
+    background-color: #1B2733; /* banner的底色 */
+}
 
 /* slogan 优化*/
 .tagline {
