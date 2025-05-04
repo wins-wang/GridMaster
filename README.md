@@ -1,3 +1,5 @@
+![GridMaster Banner](docs/GridMaster_banner.png)
+
 # GridMaster: A Lightweight Multi-Stage Grid Search AutoML Framework for Classifiers
 
 GridMaster is a Python module built for **data scientists** who want flexible and interpretable **model selection and tuning** on structured classification datasets. It automates the hyperparameter tuning process using coarse-to-fine grid search and supports model evaluation, visualization, export, and reproducibility.

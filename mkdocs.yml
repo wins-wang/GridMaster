@@ -1,6 +1,9 @@
 site_name: GridMaster
 theme:
   name: material
+  logo: GridMaster_logo.png
+  palette:
+    primary: custom
   features:
     - toc.integrate  # 确保侧边 TOC 出现
     - navigation.expand  # 自动展开导航栏

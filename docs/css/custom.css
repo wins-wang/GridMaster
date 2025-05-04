@@ -1,3 +1,26 @@
+
+/* 改变顶部banner条主色调 并且去掉题图上方空白*/
+.md-header, .md-tabs {
+    background-color: #1B2733;  /* banner的底色 */
+}
+.md-content__inner {
+    padding-top: 0px;
+}
+
+
+/* slogan 优化*/
+.tagline {
+  display: block;
+  text-align: center;
+  font-size: 1.8rem;
+  font-style: italic;
+  font-weight: bold;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  color: #00bcd4;
+  /*#00bcd4; 科技感的蓝绿色 #00e5ff（浅青蓝）、#1de9b6（薄荷绿） */
+  margin: 1.5rem 0;
+}
+
 /* ========== 标题优化 ========== */
 
 /* 二级标题 h2 */

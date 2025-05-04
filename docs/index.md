@@ -1,3 +1,10 @@
+<p align="center">
+  <img src="GridMaster_banner_s.png" alt="GridMaster Banner">
+</p>
+
+<span class="tagline"></span>
+
+
 # 🏠 **Welcome to GridMaster**
 
 Welcome to **GridMaster** — an advanced Python toolkit I built to automate hyperparameter tuning and model selection across multiple **classifiers**.
@@ -21,7 +28,7 @@ With just a few lines, GridMaster helps you:
 >
 > - **Expert**: Focuses on commonly sensitive parameters like `learning_rate` and `max_depth`.
 >
-> - **Custom**: User-defined fine grids. 
+> - **Custom**: User-defined fine grids.
 >
 > **Parallel CPU support:** Automatically detects available CPU cores and assigns half for faster parallel search (`n_jobs`), balancing speed and system performance. You can override this manually if needed.
 >
