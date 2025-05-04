@@ -1,6 +1,9 @@
 # 📘 GridMaster Version History
 
 ---
+## v0.3.3 - 2025-05-04
+🛠 Fixed multi_stage_search() setting
+
 ## v0.3.2 - 2025-05-04
 ✨ Updates
 	•	[multi_stage_search]
