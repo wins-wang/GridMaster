@@ -4,6 +4,7 @@ theme:
   logo: GridMaster_logo.png
   palette:
     primary: custom
+
   features:
     - toc.integrate  # 确保侧边 TOC 出现
     - navigation.expand  # 自动展开导航栏
@@ -11,13 +12,16 @@ theme:
     - content.code.annotate  # 代码行注释
     - content.tabs.link  # 标签页之间的上下文链接
     - content.tooltips  # 鼠标悬停提示
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
 
 nav:
   - Home: index.md
   - Quickstart: usage.md
-  - GridMaster Tools:
-      - Essential Tools: api/core_api.md
-      - Advanced Usage: api/advanced_api.md
+#  - GridMaster Tools:
+  - Essential Tools: api/core_api.md
+  - Advanced Usage: api/advanced_api.md
 
 markdown_extensions:
   - toc:
