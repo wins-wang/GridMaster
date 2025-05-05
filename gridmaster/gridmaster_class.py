@@ -804,17 +804,20 @@ class GridMaster:
         for model_name, stages in self.results.items():
             report_lines.append(f"\nFor {model_name.capitalize()} model:")
 
-            best_model = stages.get('best_model')
-            if not best_model:
-                # Skip models that have no final best_model (i.e., no meaningful search done)
+            summary = stages.get('summary', {})
+            best_params_summary = summary.get('best_params', {})
+            best_score_summary = summary.get('cv_best_score', None)
+            scoring = summary.get('scoring', 'accuracy')
+
+            if not best_params_summary or best_score_summary is None:
+                report_lines.append("⚠️ No completed search or best summary available.\n")
                 continue
 
-            scoring = best_model.scoring or 'accuracy'
             report_lines.append(f"Scoring metric used: '{scoring}'")
 
             stage_counter = 1
             sorted_stage_keys = sorted(
-                [k for k in stages.keys() if k not in ['best_model', 'final', 'test_scores']],
+                [k for k in stages.keys() if k not in ['best_model', 'final', 'test_scores', 'summary']],
                 key=lambda x: (0 if x == 'coarse' else 1 if x == 'fine' else int(x.replace('stage', '')) + 2)
             )
 
@@ -846,22 +849,27 @@ class GridMaster:
                 else:
                     report_lines.extend(param_ranges)
                     report_lines.append(f"Total of {total_combinations} parameter combinations.")
-                    clean_best_params = {k: (float(v) if isinstance(v, np.generic) else v) for k, v in grid.best_params_.items()}
-                    report_lines.append(f"Best parameters: {clean_best_params}\n")
+
+                    # Safely get best parameters per stage if available
+                    if hasattr(grid, 'best_params_'):
+                        clean_best_params = {k: (float(v) if isinstance(v, np.generic) else v)
+                                             for k, v in grid.best_params_.items()}
+                        report_lines.append(f"Best parameters: {clean_best_params}\n")
+                    else:
+                        report_lines.append("⚠️ No best parameters recorded for this stage.\n")
 
                 stage_counter += 1
 
-            best_score = best_model.best_score_
-            best_params = {k: (float(v) if isinstance(v, np.generic) else v) for k, v in best_model.best_params_.items()}
+            report_lines.append(f"✅ Conclusion: Best model for {model_name.capitalize()} with best '{scoring}' score of {best_score_summary:.4f}")
+            for k, v in best_params_summary.items():
+                report_lines.append(f"    - {k}: {v}")
 
-            report_lines.append(f"✅ Conclusion: Best model for {model_name.capitalize()} is {best_params} "
-                                f"with best '{scoring}' score of {best_score:.4f}")
             report_lines.append("-" * 60)
 
-            if best_score > overall_best_score:
-                overall_best_score = best_score
+            if best_score_summary > overall_best_score:
+                overall_best_score = best_score_summary
                 overall_best_model = model_name
-                overall_best_params = best_params
+                overall_best_params = best_params_summary
                 overall_best_metric = scoring
 
         if overall_best_model:

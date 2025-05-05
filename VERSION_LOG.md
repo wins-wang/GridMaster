@@ -1,6 +1,15 @@
 # 📘 GridMaster Version History
 
 ---
+## 📦 v0.5.2 – 2025-05-04
+
+### ✨ Improvements
+
+- **Search Report Fixes**
+    - `generate_search_report()` now consistently uses the `summary` dictionary’s **global best parameters** and **best cross-validation score** instead of relying on local `best_model.best_params_`, ensuring:
+        - ✅ Full and correct parameter display in each model’s conclusion section.
+        - ✅ Accurate overall best model selection across all models for summary comparison.
+
 ## v0.5.1 – 2025-05-04
 
 ### 🚀 New Features
