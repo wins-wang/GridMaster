@@ -52,7 +52,7 @@ By default, you can run:
 from gridmaster import GridMaster
 
 # Initialize with at least one model
-gm = GridMaster(models=['logistic', 'random_forest'], X_train, y_train)
+gm = GridMaster(models=['logistic', 'random_forest'], X_train = X_train, y_train = y_train)
 
 gm.coarse_search()
 gm.fine_search()
@@ -151,12 +151,73 @@ Example output:
 This tells you:
 
 - **Which model** performed best
-
 - **Which hyperparameters** were selected
-
 - **Cross-validation score** during tuning
-
 - **Test set performance metrics**
+
+Or you can check details by generating the report:
+
+```pyth
+gm.generate_search_report()
+```
+
+Example output:
+
+```text
+For Logistic model:
+Scoring metric used: 'accuracy'
+Stage 1: Coarse grid search:
+- clf__C in [0.01, 0.1, 1, 10]
+- clf__penalty in ['l1', 'l2']
+Total of 8 parameter combinations.
+Best parameters: {'clf__C': 0.1, 'clf__penalty': 'l2'}
+
+Stage 2: Fine grid search:
+- clf__C in [0.05, 0.075, 0.1, 0.125, 0.15]
+Total of 5 parameter combinations.
+Best parameters: {'clf__C': 0.125}
+
+Stage 3: Multi-stage fine grid search (Round 1):
+- clf__C in [0.05, 0.075, 0.1, 0.125, 0.15]
+Total of 5 parameter combinations.
+Best parameters: {'clf__C': 0.125}
+
+Stage 4: Multi-stage fine grid search (Round 2):
+- clf__C in [0.0875, 0.10625, 0.125, 0.14375, 0.1625]
+Total of 5 parameter combinations.
+Best parameters: {'clf__C': 0.125}
+
+Stage 5: Multi-stage fine grid search (Round 3):
+- clf__C in [0.1125, 0.11875, 0.125, 0.13125, 0.1375]
+Total of 5 parameter combinations.
+Best parameters: {'clf__C': 0.11875}
+
+✅ Conclusion: Best model for Logistic is {'clf__C': 0.11875} with best 'accuracy' score of 0.9842
+------------------------------------------------------------
+
+For Random_forest model:
+Scoring metric used: 'accuracy'
+Stage 1: Coarse grid search:
+- clf__n_estimators in [100, 200]
+- clf__max_depth in [5, 10]
+- clf__min_samples_split in [2, 5, 10]
+Total of 12 parameter combinations.
+Best parameters: {'clf__max_depth': 10, 'clf__min_samples_split': 2, 'clf__n_estimators': 100}
+
+Stage 2: Fine grid search:
+- clf__n_estimators in [100, 150, 200]
+- clf__max_depth in [5, 10, 15]
+Total of 9 parameter combinations.
+Best parameters: {'clf__max_depth': 10, 'clf__n_estimators': 150}
+
+✅ Conclusion: Best model for Random_forest is {'clf__max_depth': 10, 'clf__n_estimators': 150} with best 'accuracy' score of 0.9649
+------------------------------------------------------------
+
+🌟 Summary:
+The ultimate best model is Logistic with parameters {'clf__C': 0.11875} and best 'accuracy' score of 0.9842
+```
+
+
 
 ---
 
