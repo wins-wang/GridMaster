@@ -298,6 +298,8 @@ class GridMaster:
                 coarse_grid = self.results[name]['coarse']
 
             last_best = coarse_grid.best_params_
+            fine_grid = None
+
             for i, (scale, steps) in enumerate(stages):
                 stage_name = f'stage{i+1}'
                 if self.verbose:
@@ -319,11 +321,11 @@ class GridMaster:
                         coarse_param_grid=self.model_dict[name]['coarse_params']
                     )
                 elif search_mode == 'custom' and custom_fine_params:
-                        pipeline_params = self.model_dict[name]['pipeline'].get_params()
-                        fine_params = {
-                            k: v for k, v in custom_fine_params.items()
-                            if k in pipeline_params
-                        }
+                    pipeline_params = self.model_dict[name]['pipeline'].get_params()
+                    fine_params = {
+                        k: v for k, v in custom_fine_params.items()
+                        if k in pipeline_params
+                    }
                 else:
                     all_numeric_keys = [k for k in last_best.keys() if isinstance(last_best[k], (int, float))]
                     fine_params = auto_generate_fine_grid(
@@ -355,8 +357,32 @@ class GridMaster:
                 self.results[name][stage_name] = fine_grid
                 last_best = fine_grid.best_params_
 
-            self.results[name]['final'] = fine_grid
-            self.results[name]['best_model'] = fine_grid
+            # store summary for each model
+            if fine_grid is not None:
+                final_best_estimator = fine_grid.best_estimator_
+                final_best_params = fine_grid.best_params_
+                final_best_score = fine_grid.best_score_
+            else:
+                final_best_estimator = coarse_grid.best_estimator_
+                final_best_params = coarse_grid.best_params_
+                final_best_score = coarse_grid.best_score_
+
+            # Add merging step for non numeric params
+            for k, v in coarse_grid.best_params_.items():
+                if k not in final_best_params:
+                    final_best_params[k] = v
+
+            self.results[name]['final'] = fine_grid if fine_grid is not None else coarse_grid
+            self.results[name]['best_model'] = fine_grid if fine_grid is not None else coarse_grid
+
+
+            self.results[name]['summary'] = {
+                'model_name': name,
+                'best_estimator': str(final_best_estimator),
+                'best_params': {k: (float(v) if isinstance(v, np.generic) else v) for k, v in final_best_params.items()},
+                'cv_best_score': float(final_best_score),
+                'scoring': scoring
+            }
 
     def compare_best_models(self, X_test, y_test, metrics=['accuracy', 'f1', 'roc_auc'], strategy='rank_sum', weights=None):
         """

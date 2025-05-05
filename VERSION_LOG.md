@@ -1,7 +1,20 @@
 # 📘 GridMaster Version History
 
 ---
-## 📦 v0.5.2 – 2025-05-04
+## v0.5.3 - 2025-05-04
+
+### ✨ New Fixes & Improvements
+
+**Full Parameter Recovery in Best Summary**  
+- Fixed an issue where non-numeric parameters (like `'clf__penalty'` in Logistic Regression) selected during coarse search were missing from the final `summary['best_params']` when fine search only refined numeric parameters.  
+- Now merges coarse stage’s best parameters with fine stage’s, ensuring the reported best parameter set reflects all crucial hyperparameter decisions.
+
+**Improved Reporting Accuracy**  
+- The `generate_search_report()` output now correctly lists all key-value pairs for the best model per classifier, matching the merged parameter set.
+
+
+
+## v0.5.2 – 2025-05-04
 
 ### ✨ Improvements
 
