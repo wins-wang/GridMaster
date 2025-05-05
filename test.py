@@ -1,27 +1,30 @@
 import pandas as pd
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
 from gridmaster import GridMaster
 
-# Load a small dataset
-iris = load_iris()
-X = pd.DataFrame(iris.data, columns=iris.feature_names)
-y = iris.target
+# Load binary classification dataset
+data = load_breast_cancer()
+X = pd.DataFrame(data.data, columns=data.feature_names)
+y = data.target
 
-# Initialize GridMaster with at least two models
-gm = GridMaster(models=['logistic', 'random_forest'], X_train=X, y_train=y, verbose=True)
+# Split into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, stratify=y)
 
-# Run multi-stage search
-gm.multi_stage_search(scoring='accuracy')
+# Initialize GridMaster
+gm = GridMaster(models=['logistic', 'random_forest'], X_train=X_train, y_train=y_train)
 
-# Check if 'summary' is filled for each model
-for model_name, result in gm.results.items():
-    if 'summary' in result:
-        print(f"✅ Summary found for {model_name}:")
-        print(result['summary'])
-    else:
-        print(f"❌ No summary recorded for {model_name}!")
+# Perform search
+gm.multi_stage_search(scoring='f1')
 
-# Generate and print the full search report
-print("\n=== Generated Search Report ===")
-report = gm.generate_search_report()
-print(report)
+# Summarize best model
+summary = gm.get_best_model_summary()
+print(summary)
+
+# Plot ROC curve
+print("✅ Plotting ROC Curve...")
+gm.plot_roc_curve(model_name=summary['model_name'], X_test=X_test, y_test=y_test)
+
+# Plot Precision-Recall curve
+print("✅ Plotting Precision-Recall Curve...")
+gm.plot_precision_recall_curve(model_name=summary['model_name'], X_test=X_test, y_test=y_test)

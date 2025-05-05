@@ -568,6 +568,84 @@ gm.plot_confusion_matrix('logistic', X_test, y_test, normalize='true')
 ---
 
 ---
+### Method **`.plot_roc_curve()`**
+
+Plot the ROC (Receiver Operating Characteristic) curve for the specified model on a test set.
+
+This visualization helps assess the tradeoff between true positive rate (TPR) and false positive rate (FPR) across thresholds.
+
+---
+
+#### **Args**
+
+| Parameter    | Type            | Description                                             | Default  |
+| ------------ | --------------- | ------------------------------------------------------- | -------- |
+| `model_name` | str             | Name of the model whose ROC curve will be plotted.      | —        |
+| `X_test`     | array-like      | Test feature set.                                       | —        |
+| `y_test`     | array-like      | True labels for the test set.                           | —        |
+| `figsize`    | tuple, optional | Size of the plot in inches (width, height).             | `(8, 6)` |
+| `save_path`  | str, optional   | If provided, saves the plot to the specified file path. | `None`   |
+
+---
+
+#### **Returns**
+
+`None`: Displays and optionally saves a matplotlib plot.
+
+---
+
+#### **Example**
+
+<pre>
+
+```python
+gm.plot_roc_curve('xgboost', X_test, y_test)
+```
+
+
+
+---
+
+---
+
+### Method **`.plot_precision_recall_curve()`**
+
+Plot the Precision-Recall curve for the specified model on a test set.
+
+This visualization is particularly useful for imbalanced datasets, helping assess the balance between precision and recall at different decision thresholds.
+
+---
+
+#### **Args**
+
+| Parameter    | Type            | Description                                                  | Default  |
+| ------------ | --------------- | ------------------------------------------------------------ | -------- |
+| `model_name` | str             | Name of the model whose Precision-Recall curve will be plotted. | —        |
+| `X_test`     | array-like      | Test feature set.                                            | —        |
+| `y_test`     | array-like      | True labels for the test set.                                | —        |
+| `figsize`    | tuple, optional | Size of the plot in inches (width, height).                  | `(8, 6)` |
+| `save_path`  | str, optional   | If provided, saves the plot to the specified file path.      | `None`   |
+
+---
+
+#### **Returns**
+
+`None`: Displays and optionally saves a matplotlib plot.
+
+---
+
+#### **Example**
+
+```python
+gm.plot_precision_recall_curve('model_name='xgboost', X_test=X_test, y_test=y_test )
+```
+
+
+
+---
+
+---
+
 ### Method **`.plot_model_coefficients()`**
 
 Plot the top N coefficients of a linear model for interpretability.

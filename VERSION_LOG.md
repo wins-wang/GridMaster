@@ -1,6 +1,20 @@
 # 📘 GridMaster Version History
 
 ---
+## v0.5.4 – 2025-05-04 - May the force be with you!
+
+### ✨ New Functions & Fixes:
+- **Added ROC Curve Plotting**
+	•	Introduced plot_roc_curve() method to visualize the Receiver Operating Characteristic (ROC) curve for any selected model, using sklearn.metrics.roc_curve under the hood.
+	•	Helps assess classifier performance, especially for binary problems, by comparing true positive and false positive rates.
+
+- **Added Precision-Recall Curve Plotting**
+	•	Added plot_precision_recall_curve() method to generate Precision-Recall (PR) curves, using sklearn.metrics.precision_recall_curve.
+	•	This is particularly useful for imbalanced datasets to evaluate how well the model identifies positive cases.
+
+- **Advanced Model Diagnostics**
+	•	With these plots, advanced users can now directly visualize model discrimination and balance between precision, recall, and thresholds after grid search, extending beyond simple cross-validation scores.
+
 ## v0.5.3 - 2025-05-04
 
 ### ✨ New Fixes & Improvements

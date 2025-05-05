@@ -2,4 +2,4 @@
 
 from .model_search import GridMaster
 from .plot_utils import set_plot_style
-__version__ = "0.5.3"
+__version__ = "0.5.4"

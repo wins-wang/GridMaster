@@ -60,6 +60,7 @@ class GridMaster:
         self.y_train = y_train
         self.results = {}
         self.best_model_name = None
+        self.best_model_score = -float('inf')
         self.feature_names = list(X_train.columns) if hasattr(X_train, 'columns') else [f"Feature {i}" for i in range(X_train.shape[1])]
 
         import multiprocessing
@@ -384,6 +385,20 @@ class GridMaster:
                 'scoring': scoring
             }
 
+            # Check and update global best
+            summary = self.results[name]['summary']
+            if summary:
+                score = summary.get('cv_best_score', -float('inf'))
+                if not hasattr(self, 'best_model_name'):
+                    self.best_model_name = None
+                    self.best_model_score = -float('inf')
+
+                if score > self.best_model_score:
+                    self.best_model_score = score
+                    self.best_model_name = name
+
+
+
     def compare_best_models(self, X_test, y_test, metrics=['accuracy', 'f1', 'roc_auc'], strategy='rank_sum', weights=None):
         """
         Compare all trained models on test data using specified evaluation metrics.
@@ -558,12 +573,13 @@ class GridMaster:
         scores = results.get(metric)
         train_scores = results.get('mean_train_score') if plot_train else None
         best_idx = getattr(grid_obj, 'best_index_', None)
-        if best_idx is not None:
-            plt.axvline(best_idx, color='red', linestyle='--', label='Best Model')
-            plt.scatter(best_idx, scores[best_idx], color='red', s=80, zorder=5)
 
         plt.figure(figsize=figsize)
         plt.plot(range(len(scores)), scores, marker='o', label='Validation')
+
+        if best_idx is not None:
+            plt.axvline(best_idx, color='red', linestyle='--', label='Best Model')
+            plt.scatter(best_idx, scores[best_idx], color='red', s=80, zorder=5)
 
         if train_scores is not None:
             plt.plot(range(len(train_scores)), train_scores, marker='x', label='Training')
@@ -576,6 +592,89 @@ class GridMaster:
         plt.xlabel(xlabel)
         plt.ylabel(ylabel or metric)
         plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path)
+        plt.show()
+
+    def plot_roc_curve(self, model_name, X_test, y_test, figsize=(8, 6), save_path=None):
+        """
+        Plot ROC curve for the specified model on test data.
+
+        Args:
+            model_name (str): Name of the model.
+            X_test (array-like): Test feature matrix.
+            y_test (array-like): True labels for test set.
+            figsize (tuple, optional): Figure size. Defaults to (8, 6).
+            save_path (str, optional): Path to save plot. Defaults to None.
+
+        Returns:
+            None
+        """
+        from sklearn.metrics import roc_curve, auc
+
+        model = self.results[model_name]['best_model'].best_estimator_
+        if hasattr(model, "predict_proba"):
+            y_scores = model.predict_proba(X_test)[:, 1]
+        elif hasattr(model, "decision_function"):
+            y_scores = model.decision_function(X_test)
+        else:
+            raise ValueError(f"Model {model_name} does not support probability or decision score output.")
+
+        fpr, tpr, _ = roc_curve(y_test, y_scores)
+        roc_auc = auc(fpr, tpr)
+
+        plt.figure(figsize=figsize)
+        plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+        plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title(f'{model_name.upper()} – Receiver Operating Characteristic')
+        plt.legend(loc="lower right")
+        plt.grid(True)
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path)
+        plt.show()
+
+    def plot_precision_recall_curve(self, model_name, X_test, y_test, figsize=(8, 6), save_path=None):
+        """
+        Plot Precision-Recall curve for the specified model on test data.
+
+        Args:
+            model_name (str): Name of the model.
+            X_test (array-like): Test feature matrix.
+            y_test (array-like): True labels for test set.
+            figsize (tuple, optional): Figure size. Defaults to (8, 6).
+            save_path (str, optional): Path to save plot. Defaults to None.
+
+        Returns:
+            None
+        """
+        from sklearn.metrics import precision_recall_curve, average_precision_score
+
+        model = self.results[model_name]['best_model'].best_estimator_
+        if hasattr(model, "predict_proba"):
+            y_scores = model.predict_proba(X_test)[:, 1]
+        elif hasattr(model, "decision_function"):
+            y_scores = model.decision_function(X_test)
+        else:
+            raise ValueError(f"Model {model_name} does not support probability or decision score output.")
+
+        precision, recall, _ = precision_recall_curve(y_test, y_scores)
+        avg_precision = average_precision_score(y_test, y_scores)
+
+        plt.figure(figsize=figsize)
+        plt.plot(recall, precision, color='blue', lw=2, label=f'AP = {avg_precision:.2f}')
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title(f'{model_name.upper()} – Precision-Recall Curve')
+        plt.legend(loc="lower left")
         plt.grid(True)
         plt.tight_layout()
 
