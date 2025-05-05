@@ -596,13 +596,10 @@ This visualization helps assess the tradeoff between true positive rate (TPR) an
 
 #### **Example**
 
-<pre>
 
 ```python
 gm.plot_roc_curve('xgboost', X_test, y_test)
 ```
-
-
 
 ---
 
