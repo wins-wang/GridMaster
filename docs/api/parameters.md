@@ -106,11 +106,11 @@ These can be passed through the `custom_estimator_params` argument.
 
 ### Pipeline Preprocessing Details
 
-\**Logistic Regression**:
+**Logistic Regression**:
 
 - Always uses a `StandardScaler` for feature normalization.
 
-\**Tree-based models** (Random Forest, XGBoost, LightGBM, CatBoost):
+**Tree-based models** (Random Forest, XGBoost, LightGBM, CatBoost):
 
 - Use `'passthrough'` because they are scale-invariant and don’t require normalization.
 
