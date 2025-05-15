@@ -4,6 +4,8 @@
 
 <span class="tagline"></span>
 
+!!! info "🔥 Star GridMaster on GitHub"
+    Give it a ⭐ on [GitHub](https://github.com/wins-wang/GridMaster){target=_blank} to support the project and help others discover it!
 
 # 🏠 **Welcome to GridMaster**
 
@@ -113,3 +115,4 @@ For feedback or suggestions, feel free to email me at:
 📧 **mail@winston-wang.com**
 
 For more about me, please visit [my personal website](https://winston-wang.com).
+

@@ -132,3 +132,9 @@
     font-size: 1.05em;
     font-weight: bold;
 }
+
+.md-typeset .admonition p {
+  font-size: 0.95rem; /* 或更大如 1.05rem */
+  line-height: 1.5;
+  padding: 0.8em 1.2em;
+}

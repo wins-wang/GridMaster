@@ -30,6 +30,10 @@ markdown_extensions:
       toc_depth: 3
   - pymdownx.highlight  # 启用代码块高亮
   - pymdownx.superfences  # 支持多语言代码块（比如 python）
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - attr_list    # ✅ 关键扩展，支持 {} 属性
 
 
 extra_javascript:
